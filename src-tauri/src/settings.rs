@@ -57,4 +57,3 @@ fn settings_path() -> io::Result<PathBuf> {
         .ok_or_else(|| io::Error::other("cannot resolve config directory"))?;
     Ok(dirs.config_dir().join("settings.json"))
 }
-

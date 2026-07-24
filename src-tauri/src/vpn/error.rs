@@ -7,4 +7,3 @@ pub enum VpnError {
     #[error("mock backend failure: {0}")]
     BackendFailed(String),
 }
-

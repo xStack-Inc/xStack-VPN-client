@@ -64,7 +64,9 @@ impl VpnBackend for MockVpnBackend {
         if self.fail_next_connect {
             self.fail_next_connect = false;
             self.transition(VpnStatus::Error)?;
-            return Err(VpnError::BackendFailed("connect failed by test flag".into()));
+            return Err(VpnError::BackendFailed(
+                "connect failed by test flag".into(),
+            ));
         }
 
         self.transition(VpnStatus::Connected)
@@ -78,7 +80,9 @@ impl VpnBackend for MockVpnBackend {
         if self.fail_next_disconnect {
             self.fail_next_disconnect = false;
             self.transition(VpnStatus::Error)?;
-            return Err(VpnError::BackendFailed("disconnect failed by test flag".into()));
+            return Err(VpnError::BackendFailed(
+                "disconnect failed by test flag".into(),
+            ));
         }
 
         self.transition(VpnStatus::Disconnected)
@@ -158,4 +162,3 @@ mod tests {
         assert_eq!(backend.status(), VpnStatus::Error);
     }
 }
-

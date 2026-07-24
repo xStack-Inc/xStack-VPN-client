@@ -7,4 +7,3 @@ pub trait VpnBackend: Send {
     fn complete_disconnect(&mut self) -> Result<(), VpnError>;
     fn status(&self) -> VpnStatus;
 }
-

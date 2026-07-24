@@ -1,4 +1,6 @@
 use tauri::{
+    image::Image,
+    include_image,
     menu::{Menu, MenuItem, PredefinedMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Manager, Result,
@@ -10,13 +12,10 @@ const TRAY_ID: &str = "main-tray";
 
 pub fn create_tray(app: &AppHandle, status: VpnStatus) -> Result<()> {
     let menu = build_menu(app, status)?;
-    let icon = app
-        .default_window_icon()
-        .cloned()
-        .expect("application icon must be configured");
 
     TrayIconBuilder::with_id(TRAY_ID)
-        .icon(icon)
+        .icon(tray_icon(status))
+        .icon_as_template(cfg!(target_os = "macos"))
         .tooltip(status.tray_text())
         .menu(&menu)
         .show_menu_on_left_click(true)
@@ -47,6 +46,7 @@ pub fn create_tray(app: &AppHandle, status: VpnStatus) -> Result<()> {
 pub fn update_tray(app: &AppHandle, status: VpnStatus) -> Result<()> {
     if let Some(tray) = app.tray_by_id(TRAY_ID) {
         tray.set_tooltip(Some(status.tray_text()))?;
+        tray.set_icon_with_as_template(Some(tray_icon(status)), cfg!(target_os = "macos"))?;
         let menu = build_menu(app, status)?;
         tray.set_menu(Some(menu))?;
     }
@@ -67,13 +67,35 @@ pub fn show_main_window(app: &AppHandle) {
 fn build_menu(app: &AppHandle, status: VpnStatus) -> Result<Menu<tauri::Wry>> {
     let status_item = MenuItem::with_id(app, "status", status.tray_text(), false, None::<&str>)?;
     let open_item = MenuItem::with_id(app, "open", "Открыть", true, None::<&str>)?;
-    let toggle_item =
-        MenuItem::with_id(app, "toggle", status.toggle_text(), status.can_toggle(), None::<&str>)?;
+    let toggle_item = MenuItem::with_id(
+        app,
+        "toggle",
+        status.toggle_text(),
+        status.can_toggle(),
+        None::<&str>,
+    )?;
     let quit_item = MenuItem::with_id(app, "quit", "Выход", true, None::<&str>)?;
     let separator = PredefinedMenuItem::separator(app)?;
 
     Menu::with_items(
         app,
-        &[&status_item, &separator, &open_item, &toggle_item, &separator, &quit_item],
+        &[
+            &status_item,
+            &separator,
+            &open_item,
+            &toggle_item,
+            &separator,
+            &quit_item,
+        ],
     )
+}
+
+fn tray_icon(status: VpnStatus) -> Image<'static> {
+    let icon = match status {
+        VpnStatus::Connected => include_image!("./icons/tray-on.png"),
+        VpnStatus::Connecting | VpnStatus::Disconnecting => include_image!("./icons/tray-busy.png"),
+        VpnStatus::Disconnected | VpnStatus::Error => include_image!("./icons/tray-off.png"),
+    };
+
+    icon.to_owned()
 }

@@ -3,7 +3,9 @@
     <section class="settings-modal" role="dialog" aria-modal="true">
       <header>
         <h2>{{ labels.settings }}</h2>
-        <button class="icon-button" type="button" :aria-label="labels.close" @click="$emit('close')">×</button>
+        <button class="icon-button icon-button--close" type="button" :aria-label="labels.close" @click="$emit('close')">
+          <span aria-hidden="true"></span>
+        </button>
       </header>
 
       <label class="setting-row">
@@ -67,4 +69,3 @@ function save() {
   emit('close');
 }
 </script>
-

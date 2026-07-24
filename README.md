@@ -66,6 +66,8 @@ rustup target add aarch64-apple-darwin
 npm run tauri:build -- --target aarch64-apple-darwin
 ```
 
+По умолчанию macOS-сборка создает `.app`. DMG можно включить отдельной bundle-сборкой, но в MVP `.app` выбран как основной macOS-артефакт, потому что он надежнее собирается в локальных и CI-окружениях без дополнительной настройки Finder/DMG packaging.
+
 Linux x86_64:
 
 ```bash
@@ -190,4 +192,3 @@ Linux-сборка настраивается через Tauri bundle target `ap
 - нет загрузки VPN-конфигураций;
 - нет авторизации, подписок, updater и удаленного API;
 - IP, длительность и трафик являются mock-данными.
-

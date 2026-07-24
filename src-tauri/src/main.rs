@@ -37,7 +37,9 @@ fn main() {
 
             if auto_connect {
                 let state = app.state::<AppState>();
-                if let Err(error) = commands::request_connect(app.handle().clone(), state.vpn.clone()) {
+                if let Err(error) =
+                    commands::request_connect(app.handle().clone(), state.vpn.clone())
+                {
                     log::error!("ошибка автоподключения: {error}");
                 }
             }

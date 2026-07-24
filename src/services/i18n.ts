@@ -5,6 +5,14 @@ const dictionaries = {
     appName: 'Mock VPN',
     server: 'Автоматический сервер',
     location: 'Локация: Auto',
+    noConnection: 'Нет соединения',
+    endpoint: 'Маршрут',
+    received: 'Получено',
+    sent: 'Отправлено',
+    retry: 'Повторить',
+    stateCode: 'Состояние',
+    online: 'Линк активен',
+    offline: 'Линк разомкнут',
     ip: 'IP-адрес',
     duration: 'Длительность',
     traffic: 'Передано',
@@ -16,6 +24,7 @@ const dictionaries = {
     language: 'Язык интерфейса',
     connect: 'Включить',
     disconnect: 'Выключить',
+    preparing: 'Ждать',
     statuses: {
       disconnected: 'VPN выключен',
       connecting: 'Подключение...',
@@ -28,6 +37,14 @@ const dictionaries = {
     appName: 'Mock VPN',
     server: 'Automatic server',
     location: 'Location: Auto',
+    noConnection: 'No connection',
+    endpoint: 'Route',
+    received: 'Received',
+    sent: 'Sent',
+    retry: 'Retry',
+    stateCode: 'State',
+    online: 'Link active',
+    offline: 'Link open',
     ip: 'IP address',
     duration: 'Duration',
     traffic: 'Transferred',
@@ -39,6 +56,7 @@ const dictionaries = {
     language: 'Interface language',
     connect: 'Connect',
     disconnect: 'Disconnect',
+    preparing: 'Wait',
     statuses: {
       disconnected: 'VPN is off',
       connecting: 'Connecting...',
@@ -56,4 +74,3 @@ export function t(language: Language) {
 export function statusText(status: VpnStatus, language: Language): string {
   return dictionaries[language].statuses[status];
 }
-

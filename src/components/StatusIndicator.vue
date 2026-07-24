@@ -1,6 +1,7 @@
 <template>
   <div class="status-indicator" :class="`status-indicator--${status}`" aria-hidden="true">
-    <span></span>
+    <span class="status-indicator__mark"></span>
+    <span class="status-indicator__line"></span>
   </div>
 </template>
 
@@ -11,4 +12,3 @@ defineProps<{
   status: VpnStatus;
 }>();
 </script>
-

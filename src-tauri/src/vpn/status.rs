@@ -33,4 +33,3 @@ impl VpnStatus {
         !matches!(self, Self::Connecting | Self::Disconnecting)
     }
 }
-
