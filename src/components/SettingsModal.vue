@@ -1,0 +1,70 @@
+<template>
+  <div class="modal-backdrop" role="presentation" @click.self="$emit('close')">
+    <section class="settings-modal" role="dialog" aria-modal="true">
+      <header>
+        <h2>{{ labels.settings }}</h2>
+        <button class="icon-button" type="button" :aria-label="labels.close" @click="$emit('close')">×</button>
+      </header>
+
+      <label class="setting-row">
+        <span>{{ labels.launchOnStartup }}</span>
+        <input v-model="draft.launchOnStartup" type="checkbox" />
+      </label>
+
+      <label class="setting-row">
+        <span>{{ labels.minimizeToTray }}</span>
+        <input v-model="draft.minimizeToTray" type="checkbox" />
+      </label>
+
+      <label class="setting-row">
+        <span>{{ labels.autoConnect }}</span>
+        <input v-model="draft.autoConnect" type="checkbox" />
+      </label>
+
+      <label class="setting-row setting-row--select">
+        <span>{{ labels.language }}</span>
+        <select v-model="draft.language">
+          <option value="ru">Русский</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+
+      <footer>
+        <button class="secondary-button" type="button" @click="$emit('close')">{{ labels.close }}</button>
+        <button class="primary-button" type="button" @click="save">OK</button>
+      </footer>
+    </section>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, reactive, watch } from 'vue';
+import type { AppSettings } from '../types/vpn';
+import { t } from '../services/i18n';
+
+const props = defineProps<{
+  settings: AppSettings;
+}>();
+
+const emit = defineEmits<{
+  close: [];
+  save: [settings: AppSettings];
+}>();
+
+const draft = reactive<AppSettings>({ ...props.settings });
+const labels = computed(() => t(draft.language));
+
+watch(
+  () => props.settings,
+  (settings) => {
+    Object.assign(draft, settings);
+  },
+  { deep: true },
+);
+
+function save() {
+  emit('save', { ...draft });
+  emit('close');
+}
+</script>
+
