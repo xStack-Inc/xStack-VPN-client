@@ -38,6 +38,9 @@
       "icons/icon.ico"
     ],
     "category": "Utility",
+    "macOS": {
+      "signingIdentity": "-"
+    },
     "shortDescription": "Mock VPN client",
     "longDescription": "A lightweight cross-platform VPN client MVP with mock connection logic."
   }

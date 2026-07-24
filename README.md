@@ -179,6 +179,24 @@ Workflow `.github/workflows/build.yml` собирает отдельные ар�
 
 В MVP signing и notarization не настроены. macOS Gatekeeper может предупреждать о неизвестном разработчике. Для production потребуется Apple Developer ID certificate, подпись `.app`/`.dmg`, hardened runtime, корректные entitlements и notarization через Apple notary service.
 
+Если Developer ID недоступен, проект использует ad-hoc подпись macOS через `bundle.macOS.signingIdentity = "-"`. Это помогает избежать части ошибок запуска на Apple Silicon, но не делает приложение доверенным для Gatekeeper. Пользователь все равно может увидеть предупреждение и должен разрешить запуск через `Control + click -> Open` или `System Settings -> Privacy & Security -> Open Anyway`.
+
+Для передачи тестерам без терминала собирайте и архивируйте приложение так:
+
+```bash
+npm run tauri:build -- --target aarch64-apple-darwin
+cd src-tauri/target/aarch64-apple-darwin/release/bundle/macos
+ditto -c -k --keepParent "Mock VPN Client.app" "Mock VPN Client-macos-arm64.zip"
+```
+
+Инструкция для пользователя:
+
+1. Распаковать ZIP.
+2. Попробовать открыть приложение двойным кликом.
+3. Если macOS заблокировала запуск, открыть `System Settings -> Privacy & Security`.
+4. Нажать `Open Anyway` рядом с сообщением о `Mock VPN Client`.
+5. Если кнопка не появилась, нажать `Control + click` по приложению и выбрать `Open`.
+
 ## AppImage для Linux
 
 Linux-сборка настраивается через Tauri bundle target `appimage`. Для успешной сборки runner или локальная машина должны иметь системные зависимости Tauri/WebKitGTK и инструменты, необходимые для AppImage.
