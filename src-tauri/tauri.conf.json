@@ -29,7 +29,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "msi", "appimage"],
+    "targets": ["app", "nsis", "appimage"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -40,6 +40,13 @@
     "category": "Utility",
     "macOS": {
       "signingIdentity": "-"
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico",
+        "installerSidebar": null
+      }
     },
     "shortDescription": "Mock VPN client",
     "longDescription": "A lightweight cross-platform VPN client MVP with mock connection logic."
