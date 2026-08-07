@@ -349,7 +349,11 @@ jobs:
             echo ""
             echo "1. Download the \`.dmg\` file and open it."
             echo "2. Drag **Mock VPN Client** to the **Applications** folder."
-            echo "3. On first launch macOS will block the app with _\"cannot be opened because it is from an unidentified developer\"_:"
+            echo "3. Remove the quarantine attribute (required for the app to work correctly):"
+            echo '   ```bash'
+            echo '   xattr -cr "/Applications/Mock VPN Client.app"'
+            echo '   ```'
+            echo "4. On first launch macOS will block the app with _\"cannot be opened because it is from an unidentified developer\"_:"
             echo "   - Open **System Settings → Privacy & Security**."
             echo "   - Scroll down to the **Security** section — you will see a message about the blocked app."
             echo "   - Click **Open Anyway**."
