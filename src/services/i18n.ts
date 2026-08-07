@@ -2,7 +2,7 @@ import type { Language, VpnStatus } from '../types/vpn';
 
 const dictionaries = {
   ru: {
-    appName: 'Корпоративный VPN',
+    appName: 'xStack VPN',
     server: 'Автоматический сервер',
     location: 'Локация: Auto',
     noConnection: 'Нет соединения',
@@ -39,7 +39,7 @@ const dictionaries = {
     },
   },
   en: {
-    appName: 'Corporate VPN',
+    appName: 'xStack VPN',
     server: 'Automatic server',
     location: 'Location: Auto',
     noConnection: 'No connection',

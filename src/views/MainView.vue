@@ -8,7 +8,7 @@
           </svg>
         </div>
         <div class="app-logo__text">
-          <p class="app-kicker">xstack VPN</p>
+          <p class="app-kicker">xStack VPN</p>
           <h1>{{ labels.appName }}</h1>
         </div>
       </div>
