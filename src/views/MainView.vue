@@ -1,9 +1,16 @@
 <template>
   <main class="vpn-shell">
     <header class="app-header">
-      <div>
-        <p class="app-kicker">Secure Link Console</p>
-        <h1>{{ labels.appName }}</h1>
+      <div class="app-logo">
+        <div class="app-logo__mark" aria-hidden="true">
+          <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 2L9.5 11L2 20H6.5L11 14.2L15.5 20H20L12.5 11L20 2H15.5L11 7.8L6.5 2H2Z" fill="white"/>
+          </svg>
+        </div>
+        <div class="app-logo__text">
+          <p class="app-kicker">xstack VPN</p>
+          <h1>{{ labels.appName }}</h1>
+        </div>
       </div>
       <button class="settings-button" type="button" :aria-label="labels.settings" @click="settingsOpen = true">
         <span aria-hidden="true"></span>
