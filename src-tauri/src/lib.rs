@@ -10,6 +10,9 @@ mod tray;
 
 use crate::{settings::AppSettings, state::AppState};
 
+#[allow(unused_imports)]
+use tauri::Manager;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let settings = AppSettings::load().unwrap_or_else(|error| {
