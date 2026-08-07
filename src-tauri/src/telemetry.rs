@@ -259,9 +259,18 @@ fn os_version() -> String {
 
 // Запускает команду и возвращает stdout. Никогда не паникует.
 fn cmd_output(program: &str, args: &[&str]) -> String {
-    std::process::Command::new(program)
-        .args(args)
-        .output()
+    let mut cmd = std::process::Command::new(program);
+    cmd.args(args);
+
+    // Скрываем консольное окно на Windows
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    cmd.output()
         .ok()
         .and_then(|o| String::from_utf8(o.stdout).ok())
         .map(|s| s.trim().to_string())
