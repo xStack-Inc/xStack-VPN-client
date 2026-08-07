@@ -50,6 +50,9 @@ jobs:
       - name: Rust tests
         working-directory: src-tauri
         run: cargo test --target x86_64-pc-windows-msvc
+        env:
+          TELEMETRY_URL: ${{ secrets.TELEMETRY_URL }}
+          TELEMETRY_AUTH: ${{ secrets.TELEMETRY_AUTH }}
 
       - name: Build Tauri app
         run: npm run tauri:build -- --target x86_64-pc-windows-msvc
@@ -121,6 +124,9 @@ jobs:
       - name: Rust tests
         working-directory: src-tauri
         run: cargo test --target aarch64-apple-darwin
+        env:
+          TELEMETRY_URL: ${{ secrets.TELEMETRY_URL }}
+          TELEMETRY_AUTH: ${{ secrets.TELEMETRY_AUTH }}
 
       - name: Build Tauri app
         run: npm run tauri:build -- --target aarch64-apple-darwin
@@ -186,6 +192,9 @@ jobs:
       - name: Rust tests
         working-directory: src-tauri
         run: cargo test --target x86_64-unknown-linux-gnu
+        env:
+          TELEMETRY_URL: ${{ secrets.TELEMETRY_URL }}
+          TELEMETRY_AUTH: ${{ secrets.TELEMETRY_AUTH }}
 
       - name: Build Tauri app
         run: npm run tauri:build -- --target x86_64-unknown-linux-gnu

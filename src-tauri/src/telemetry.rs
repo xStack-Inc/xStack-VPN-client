@@ -1,10 +1,13 @@
 use serde::Serialize;
 
-// Значения запекаются в бинарник на этапе компиляции.
-// В CI передаются через env в шаге Build Tauri app.
-// Локально: TELEMETRY_URL=... TELEMETRY_AUTH=... cargo build
-const TELEMETRY_URL: &str = env!("TELEMETRY_URL");
-const TELEMETRY_AUTH: &str = env!("TELEMETRY_AUTH");
+const TELEMETRY_URL: &str = match option_env!("TELEMETRY_URL") {
+    Some(v) => v,
+    None => "",
+};
+const TELEMETRY_AUTH: &str = match option_env!("TELEMETRY_AUTH") {
+    Some(v) => v,
+    None => "",
+};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
