@@ -1,3 +1,5 @@
+#![cfg(desktop)]
+
 use tauri::{
     image::Image,
     include_image,

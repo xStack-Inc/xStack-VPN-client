@@ -6,7 +6,7 @@ mod state;
 mod tray;
 mod vpn;
 
-use tauri::{Manager, WindowEvent};
+use tauri::Manager;
 
 use crate::{settings::AppSettings, state::AppState, vpn::status::VpnStatus};
 
@@ -16,14 +16,20 @@ pub fn run() {
         log::error!("ошибка загрузки настроек: {error}");
         AppSettings::default()
     });
+
+    #[cfg(desktop)]
     let auto_connect = settings.auto_connect;
 
-    tauri::Builder::default()
-        .plugin(tauri_plugin_log::Builder::new().build())
-        .plugin(tauri_plugin_autostart::init(
-            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
-            None,
-        ))
+    let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_log::Builder::new().build());
+
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_autostart::init(
+        tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+        None,
+    ));
+
+    builder
         .manage(AppState::new(settings))
         .invoke_handler(tauri::generate_handler![
             commands::get_vpn_status,
@@ -34,21 +40,26 @@ pub fn run() {
         ])
         .setup(move |app| {
             log::info!("запуск приложения");
-            tray::create_tray(app.handle(), VpnStatus::Disconnected)?;
 
-            if auto_connect {
-                let state = app.state::<AppState>();
-                if let Err(error) =
-                    commands::request_connect(app.handle().clone(), state.vpn.clone())
-                {
-                    log::error!("ошибка автоподключения: {error}");
+            #[cfg(desktop)]
+            {
+                tray::create_tray(app.handle(), VpnStatus::Disconnected)?;
+
+                if auto_connect {
+                    let state = app.state::<AppState>();
+                    if let Err(error) =
+                        commands::request_connect(app.handle().clone(), state.vpn.clone())
+                    {
+                        log::error!("ошибка автоподключения: {error}");
+                    }
                 }
             }
 
             Ok(())
         })
         .on_window_event(|window, event| {
-            if let WindowEvent::CloseRequested { api, .. } = event {
+            #[cfg(desktop)]
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 let app = window.app_handle();
                 let _minimize_to_tray = app
                     .state::<AppState>()
