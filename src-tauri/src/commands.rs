@@ -6,9 +6,11 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use crate::{
     settings::AppSettings,
     state::AppState,
-    tray,
     vpn::{backend::VpnBackend, status::VpnStatus},
 };
+
+#[cfg(desktop)]
+use crate::tray;
 
 #[tauri::command]
 pub fn get_vpn_status(state: State<'_, AppState>) -> Result<VpnStatus, String> {
@@ -44,26 +46,29 @@ pub fn save_settings(
 }
 
 pub fn toggle_from_tray(app: AppHandle) {
-    let state = app.state::<AppState>();
-    let status = match state.vpn.lock() {
-        Ok(vpn) => vpn.status(),
-        Err(error) => {
+    #[cfg(desktop)]
+    {
+        let state = app.state::<AppState>();
+        let status = match state.vpn.lock() {
+            Ok(vpn) => vpn.status(),
+            Err(error) => {
+                log::error!("ошибка backend: {error}");
+                return;
+            }
+        };
+
+        let result = match status {
+            VpnStatus::Connected => request_disconnect(app.clone(), state.vpn.clone()),
+            VpnStatus::Disconnected | VpnStatus::Error => {
+                request_connect(app.clone(), state.vpn.clone())
+            }
+            _ => Ok(status),
+        };
+
+        if let Err(error) = result {
             log::error!("ошибка backend: {error}");
-            return;
+            let _ = emit_status(&app, VpnStatus::Error);
         }
-    };
-
-    let result = match status {
-        VpnStatus::Connected => request_disconnect(app.clone(), state.vpn.clone()),
-        VpnStatus::Disconnected | VpnStatus::Error => {
-            request_connect(app.clone(), state.vpn.clone())
-        }
-        _ => Ok(status),
-    };
-
-    if let Err(error) = result {
-        log::error!("ошибка backend: {error}");
-        let _ = emit_status(&app, VpnStatus::Error);
     }
 }
 
@@ -146,6 +151,7 @@ pub fn request_disconnect(
 }
 
 fn emit_status(app: &AppHandle, status: VpnStatus) -> Result<(), String> {
+    #[cfg(desktop)]
     tray::update_tray(app, status).map_err(|error| error.to_string())?;
     app.emit("vpn-status-changed", status)
         .map_err(|error| error.to_string())

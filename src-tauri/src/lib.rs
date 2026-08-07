@@ -3,12 +3,12 @@
 mod commands;
 mod settings;
 mod state;
-mod tray;
 mod vpn;
 
-use tauri::Manager;
+#[cfg(desktop)]
+mod tray;
 
-use crate::{settings::AppSettings, state::AppState, vpn::status::VpnStatus};
+use crate::{settings::AppSettings, state::AppState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -43,7 +43,7 @@ pub fn run() {
 
             #[cfg(desktop)]
             {
-                tray::create_tray(app.handle(), VpnStatus::Disconnected)?;
+                tray::create_tray(app.handle(), crate::vpn::status::VpnStatus::Disconnected)?;
 
                 if auto_connect {
                     let state = app.state::<AppState>();
@@ -55,12 +55,13 @@ pub fn run() {
                 }
             }
 
+            let _ = app;
             Ok(())
         })
-        .on_window_event(|window, event| {
+        .on_window_event(|_window, _event| {
             #[cfg(desktop)]
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                let app = window.app_handle();
+            if let tauri::WindowEvent::CloseRequested { api, .. } = _event {
+                let app = _window.app_handle();
                 let _minimize_to_tray = app
                     .state::<AppState>()
                     .settings
@@ -71,7 +72,7 @@ pub fn run() {
                 log::info!("закрытие главного окна");
 
                 api.prevent_close();
-                if let Err(error) = window.hide() {
+                if let Err(error) = _window.hide() {
                     log::error!("ошибка сворачивания в трей: {error}");
                 } else {
                     log::info!("сворачивание в трей");
