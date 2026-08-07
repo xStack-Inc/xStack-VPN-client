@@ -25,6 +25,11 @@ const dictionaries = {
     connect: 'Включить',
     disconnect: 'Выключить',
     preparing: 'Ждать',
+    telemetry: 'Отправка статистики',
+    telemetryConsentTitle: 'Помогите улучшить приложение',
+    telemetryConsentBody: 'Мы хотим собирать анонимную статистику использования: версию приложения, ОС и архитектуру устройства. Данные не содержат личной информации и отправляются только с вашего согласия.',
+    telemetryConsentAccept: 'Разрешить',
+    telemetryConsentDecline: 'Отказать',
     statuses: {
       disconnected: 'VPN выключен',
       connecting: 'Подключение...',
@@ -57,6 +62,11 @@ const dictionaries = {
     connect: 'Connect',
     disconnect: 'Disconnect',
     preparing: 'Wait',
+    telemetry: 'Usage statistics',
+    telemetryConsentTitle: 'Help improve the app',
+    telemetryConsentBody: 'We would like to collect anonymous usage statistics: app version, OS and device architecture. No personal data is included and nothing is sent without your consent.',
+    telemetryConsentAccept: 'Allow',
+    telemetryConsentDecline: 'Decline',
     statuses: {
       disconnected: 'VPN is off',
       connecting: 'Connecting...',

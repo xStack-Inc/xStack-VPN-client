@@ -49,11 +49,18 @@
       @save="store.updateSettings"
       @close="settingsOpen = false"
     />
+
+    <ConsentDialog
+      v-if="store.state.showConsentDialog"
+      :language="store.state.settings.language"
+      @respond="store.respondToConsent"
+    />
   </main>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import ConsentDialog from '../components/ConsentDialog.vue';
 import PowerButton from '../components/PowerButton.vue';
 import SettingsModal from '../components/SettingsModal.vue';
 import StatsPanel from '../components/StatsPanel.vue';

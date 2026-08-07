@@ -5,9 +5,11 @@ import {
   connectVpn,
   disconnectVpn,
   getSettings,
+  getTelemetryConsent,
   getVpnStatus,
   onVpnStatusChanged,
   saveSettings,
+  setTelemetryConsent,
 } from '../services/tauriVpn';
 import { canRequestConnect, canRequestDisconnect, isTransitioning } from '../services/vpnStateMachine';
 
@@ -17,6 +19,7 @@ interface VpnStoreState {
   stats: VpnStats;
   isLoaded: boolean;
   errorMessage: string | null;
+  showConsentDialog: boolean;
 }
 
 const defaultSettings: AppSettings = {
@@ -24,6 +27,8 @@ const defaultSettings: AppSettings = {
   minimizeToTray: true,
   autoConnect: false,
   language: 'ru',
+  telemetryConsent: null,
+  deviceId: '',
 };
 
 const state = reactive<VpnStoreState>({
@@ -36,6 +41,7 @@ const state = reactive<VpnStoreState>({
   },
   isLoaded: false,
   errorMessage: null,
+  showConsentDialog: false,
 });
 
 let timer: number | null = null;
@@ -92,6 +98,18 @@ export function useVpnStore() {
     applyStatus(status);
     unsubscribeStatus = await onVpnStatusChanged(applyStatus);
     state.isLoaded = true;
+
+    // Показываем диалог если пользователь ещё не отвечал
+    const consent = await getTelemetryConsent();
+    if (consent === null) {
+      state.showConsentDialog = true;
+    }
+  }
+
+  async function respondToConsent(consent: boolean) {
+    state.showConsentDialog = false;
+    await setTelemetryConsent(consent);
+    state.settings = { ...state.settings, telemetryConsent: consent };
   }
 
   async function toggleVpn() {
@@ -140,6 +158,7 @@ export function useVpnStore() {
     initialize,
     toggleVpn,
     updateSettings,
+    respondToConsent,
     dispose,
   };
 }

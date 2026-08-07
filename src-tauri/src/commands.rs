@@ -6,6 +6,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use crate::{
     settings::AppSettings,
     state::AppState,
+    telemetry,
     vpn::{backend::VpnBackend, status::VpnStatus},
 };
 
@@ -43,6 +44,38 @@ pub fn save_settings(
     let mut current = state.settings.lock().map_err(|error| error.to_string())?;
     *current = settings.clone();
     Ok(settings)
+}
+
+/// Возвращает текущее согласие: None = не спрашивали, Some(bool) = ответил
+#[tauri::command]
+pub fn get_telemetry_consent(state: State<'_, AppState>) -> Result<Option<bool>, String> {
+    let settings = state.settings.lock().map_err(|e| e.to_string())?;
+    Ok(settings.telemetry_consent)
+}
+
+/// Сохраняет ответ пользователя и при согласии отправляет первое событие
+#[tauri::command]
+pub async fn set_telemetry_consent(
+    consent: bool,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let (device_id, url, auth) = {
+        let mut settings = state.settings.lock().map_err(|e| e.to_string())?;
+        settings.telemetry_consent = Some(consent);
+        settings.save().map_err(|e| e.to_string())?;
+        (
+            settings.device_id.clone(),
+            std::env::var("TELEMETRY_URL").unwrap_or_default(),
+            std::env::var("TELEMETRY_AUTH").unwrap_or_default(),
+        )
+    };
+
+    if consent && !url.is_empty() {
+        let payload = telemetry::TelemetryPayload::new(&device_id, "app_launch");
+        telemetry::send(&payload, &url, &auth).await;
+    }
+
+    Ok(())
 }
 
 pub fn toggle_from_tray(app: AppHandle) {

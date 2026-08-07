@@ -2,6 +2,7 @@ use std::{fs, io, path::PathBuf};
 
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -17,6 +18,16 @@ pub struct AppSettings {
     pub minimize_to_tray: bool,
     pub auto_connect: bool,
     pub language: Language,
+    /// None = не спрашивали ещё, Some(true/false) = ответил
+    #[serde(default)]
+    pub telemetry_consent: Option<bool>,
+    /// Анонимный UUID, генерируется один раз и хранится локально
+    #[serde(default = "new_device_id")]
+    pub device_id: String,
+}
+
+fn new_device_id() -> String {
+    Uuid::new_v4().to_string()
 }
 
 impl Default for AppSettings {
@@ -26,6 +37,8 @@ impl Default for AppSettings {
             minimize_to_tray: true,
             auto_connect: false,
             language: Language::Ru,
+            telemetry_consent: None,
+            device_id: new_device_id(),
         }
     }
 }

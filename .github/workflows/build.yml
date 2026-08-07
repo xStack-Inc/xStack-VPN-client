@@ -53,6 +53,9 @@ jobs:
 
       - name: Build Tauri app
         run: npm run tauri:build -- --target x86_64-pc-windows-msvc
+        env:
+          TELEMETRY_URL: ${{ secrets.TELEMETRY_URL }}
+          TELEMETRY_AUTH: ${{ secrets.TELEMETRY_AUTH }}
 
       # To enable signing: add PFX_BASE64 (base64-encoded .pfx) and PFX_PASSWORD to repo secrets.
       - name: Sign Windows binary (optional)
@@ -121,6 +124,9 @@ jobs:
 
       - name: Build Tauri app
         run: npm run tauri:build -- --target aarch64-apple-darwin
+        env:
+          TELEMETRY_URL: ${{ secrets.TELEMETRY_URL }}
+          TELEMETRY_AUTH: ${{ secrets.TELEMETRY_AUTH }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -183,6 +189,9 @@ jobs:
 
       - name: Build Tauri app
         run: npm run tauri:build -- --target x86_64-unknown-linux-gnu
+        env:
+          TELEMETRY_URL: ${{ secrets.TELEMETRY_URL }}
+          TELEMETRY_AUTH: ${{ secrets.TELEMETRY_AUTH }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -250,6 +259,8 @@ jobs:
         run: npm run tauri android build -- --apk --target aarch64
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
+          TELEMETRY_URL: ${{ secrets.TELEMETRY_URL }}
+          TELEMETRY_AUTH: ${{ secrets.TELEMETRY_AUTH }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

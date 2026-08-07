@@ -24,6 +24,14 @@ export function saveSettings(settings: AppSettings): Promise<AppSettings> {
   return invoke<AppSettings>('save_settings', { settings });
 }
 
+export function getTelemetryConsent(): Promise<boolean | null> {
+  return invoke<boolean | null>('get_telemetry_consent');
+}
+
+export function setTelemetryConsent(consent: boolean): Promise<void> {
+  return invoke<void>('set_telemetry_consent', { consent });
+}
+
 export async function onVpnStatusChanged(
   handler: (status: VpnStatus) => void,
 ): Promise<() => void> {

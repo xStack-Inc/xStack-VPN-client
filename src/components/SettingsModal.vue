@@ -31,6 +31,11 @@
         </select>
       </label>
 
+      <label class="setting-row">
+        <span>{{ labels.telemetry }}</span>
+        <input v-model="telemetryChecked" type="checkbox" />
+      </label>
+
       <footer>
         <button class="secondary-button" type="button" @click="$emit('close')">{{ labels.close }}</button>
         <button class="primary-button" type="button" @click="save">OK</button>
@@ -55,6 +60,12 @@ const emit = defineEmits<{
 
 const draft = reactive<AppSettings>({ ...props.settings });
 const labels = computed(() => t(draft.language));
+
+// null отображаем как false в чекбоксе
+const telemetryChecked = computed({
+  get: () => draft.telemetryConsent === true,
+  set: (v: boolean) => { draft.telemetryConsent = v; },
+});
 
 watch(
   () => props.settings,

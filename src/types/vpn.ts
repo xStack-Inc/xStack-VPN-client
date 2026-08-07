@@ -12,6 +12,8 @@ export interface AppSettings {
   minimizeToTray: boolean;
   autoConnect: boolean;
   language: Language;
+  telemetryConsent: boolean | null;
+  deviceId: string;
 }
 
 export interface VpnStats {

@@ -3,6 +3,7 @@
 mod commands;
 mod settings;
 mod state;
+mod telemetry;
 mod vpn;
 
 #[cfg(desktop)]
@@ -39,7 +40,9 @@ pub fn run() {
             commands::connect_vpn,
             commands::disconnect_vpn,
             commands::get_settings,
-            commands::save_settings
+            commands::save_settings,
+            commands::get_telemetry_consent,
+            commands::set_telemetry_consent,
         ])
         .setup(move |app| {
             log::info!("запуск приложения");
