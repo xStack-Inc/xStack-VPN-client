@@ -53,8 +53,11 @@ pub fn run() {
 
                 if auto_connect {
                     let state = app.state::<AppState>();
+                    let dev_id = state.settings.lock()
+                        .map(|s| s.device_id.clone())
+                        .unwrap_or_default();
                     if let Err(error) =
-                        commands::request_connect(app.handle().clone(), state.vpn.clone())
+                        commands::request_connect(app.handle().clone(), state.vpn.clone(), dev_id)
                     {
                         log::error!("ошибка автоподключения: {error}");
                     }
