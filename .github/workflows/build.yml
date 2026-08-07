@@ -16,6 +16,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          (Get-Content package.json) -replace '"version": "[^"]*"', "`"version`": `"$version`"" | Set-Content package.json
+          (Get-Content src-tauri/tauri.conf.json) -replace '"version": "[^"]*"', "`"version`": `"$version`"" | Set-Content src-tauri/tauri.conf.json
+          (Get-Content src-tauri/Cargo.toml) -replace '^version = "[^"]*"', "version = `"$version`"" | Set-Content src-tauri/Cargo.toml
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -76,6 +85,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
+          sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
+          sed -i '' "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -111,7 +128,7 @@ jobs:
           name: vpn-client-macos-arm64
           path: |
             src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
-            src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app
+            src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app/**/*.plist
           if-no-files-found: error
 
   build-linux:
@@ -121,6 +138,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
+          sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
+          sed -i "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
 
       - name: Install Linux dependencies
         run: |
@@ -175,6 +200,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
+          sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
+          sed -i "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -266,19 +299,60 @@ jobs:
             echo ""
             echo "| Platform | File |"
             echo "|---|---|"
-            find artifacts -type f | sort | while read f; do
+            find artifacts -type f -name "*.exe" -o -type f -name "*.dmg" -o -type f -name "*.AppImage" -o -type f -name "*.apk" | sort | while read f; do
               name=$(basename "$f")
               case "$name" in
                 *.exe)       platform="Windows x86_64 (portable installer)" ;;
                 *.dmg)       platform="macOS ARM64" ;;
                 *.AppImage)  platform="Linux x86_64" ;;
                 *.apk)       platform="Android ARM64" ;;
-                *)           platform="Other" ;;
               esac
               echo "| $platform | \`$name\` |"
             done
             echo ""
             echo "**Full changelog:** https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}"
+            echo ""
+            echo ""
+            echo "---"
+            echo ""
+            echo "## Installation"
+            echo ""
+            echo "> **Note:** the app is not code-signed. Follow the platform-specific steps below to bypass the security warning."
+            echo ""
+            echo "### Windows"
+            echo ""
+            echo "1. Download the \`.exe\` file."
+            echo "2. Double-click it to run — no installation required, it is a portable installer."
+            echo "3. If **Windows Defender SmartScreen** shows _\"Windows protected your PC\"_:"
+            echo "   - Click **More info**."
+            echo "   - Click **Run anyway**."
+            echo ""
+            echo "### macOS"
+            echo ""
+            echo "1. Download the \`.dmg\` file and open it."
+            echo "2. Drag **Mock VPN Client** to the **Applications** folder."
+            echo "3. On first launch macOS will block the app with _\"cannot be opened because it is from an unidentified developer\"_:"
+            echo "   - Open **System Settings → Privacy & Security**."
+            echo "   - Scroll down to the **Security** section — you will see a message about the blocked app."
+            echo "   - Click **Open Anyway**."
+            echo "   - In the confirmation dialog click **Open**."
+            echo ""
+            echo "### Linux"
+            echo ""
+            echo "1. Download the \`.AppImage\` file."
+            echo "2. Make it executable and run:"
+            echo '   ```bash'
+            echo '   chmod +x Mock-VPN-Client_*.AppImage'
+            echo '   ./Mock-VPN-Client_*.AppImage'
+            echo '   ```'
+            echo ""
+            echo "### Android"
+            echo ""
+            echo "1. Download the \`.apk\` file to your device."
+            echo "2. Open the file — Android will warn _\"Install unknown apps\"_:"
+            echo "   - Tap **Settings** and enable **Allow from this source**."
+            echo "   - Go back and tap **Install**."
+            echo "3. If Play Protect shows a warning, tap **Install anyway**."
           } > release_notes.md
 
           echo "notes_file=release_notes.md" >> "$GITHUB_OUTPUT"
