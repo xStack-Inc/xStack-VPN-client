@@ -59,20 +59,16 @@ pub async fn set_telemetry_consent(
     consent: bool,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    let (device_id, url, auth) = {
+    let device_id = {
         let mut settings = state.settings.lock().map_err(|e| e.to_string())?;
         settings.telemetry_consent = Some(consent);
         settings.save().map_err(|e| e.to_string())?;
-        (
-            settings.device_id.clone(),
-            std::env::var("TELEMETRY_URL").unwrap_or_default(),
-            std::env::var("TELEMETRY_AUTH").unwrap_or_default(),
-        )
+        settings.device_id.clone()
     };
 
-    if consent && !url.is_empty() {
+    if consent {
         let payload = telemetry::TelemetryPayload::new(&device_id, "app_launch");
-        telemetry::send(&payload, &url, &auth).await;
+        telemetry::send(&payload).await;
     }
 
     Ok(())

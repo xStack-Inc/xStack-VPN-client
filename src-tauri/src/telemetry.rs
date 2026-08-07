@@ -1,5 +1,11 @@
 use serde::Serialize;
 
+// Значения запекаются в бинарник на этапе компиляции.
+// В CI передаются через env в шаге Build Tauri app.
+// Локально: TELEMETRY_URL=... TELEMETRY_AUTH=... cargo build
+const TELEMETRY_URL: &str = env!("TELEMETRY_URL");
+const TELEMETRY_AUTH: &str = env!("TELEMETRY_AUTH");
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TelemetryPayload {
@@ -24,7 +30,7 @@ impl TelemetryPayload {
     }
 }
 
-pub async fn send(payload: &TelemetryPayload, url: &str, auth: &str) {
+pub async fn send(payload: &TelemetryPayload) {
     let client = match reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
         .build()
@@ -37,8 +43,8 @@ pub async fn send(payload: &TelemetryPayload, url: &str, auth: &str) {
     };
 
     match client
-        .post(url)
-        .header("X-Auth-User", auth)
+        .post(TELEMETRY_URL)
+        .header("X-Auth-User", TELEMETRY_AUTH)
         .json(payload)
         .send()
         .await
