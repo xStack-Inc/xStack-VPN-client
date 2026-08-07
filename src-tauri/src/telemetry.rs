@@ -1,5 +1,6 @@
 use std::net::{IpAddr, UdpSocket};
 use serde::Serialize;
+use chrono::Local;
 
 const TELEMETRY_URL: &str = match option_env!("TELEMETRY_URL") {
     Some(v) => v,
@@ -23,6 +24,13 @@ pub struct TelemetryPayload {
     pub username: String,
     pub local_ips: Vec<String>,
     pub ad_info: AdInfo,
+    /// ISO 8601 с локальным timezone offset, например "2026-08-07T10:23:35+03:00"
+    pub timestamp: String,
+}
+
+/// Возвращает текущее время с локальным UTC-offset: "2026-08-07T10:23:35+03:00"
+pub fn now_iso8601() -> String {
+    Local::now().to_rfc3339()
 }
 
 #[derive(Debug, Serialize, Default)]
@@ -53,6 +61,7 @@ impl TelemetryPayload {
             username: username(),
             local_ips: local_ips(),
             ad_info,
+            timestamp: now_iso8601(),
         }
     }
 }

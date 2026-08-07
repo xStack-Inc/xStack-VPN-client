@@ -21,12 +21,12 @@ pub fn get_vpn_status(state: State<'_, AppState>) -> Result<VpnStatus, String> {
 
 #[tauri::command]
 pub fn connect_vpn(app: AppHandle, state: State<'_, AppState>) -> Result<VpnStatus, String> {
-    request_connect(app, state.vpn.clone())
+    request_connect(app, state.vpn.clone(), device_id(&state))
 }
 
 #[tauri::command]
 pub fn disconnect_vpn(app: AppHandle, state: State<'_, AppState>) -> Result<VpnStatus, String> {
-    request_disconnect(app, state.vpn.clone())
+    request_disconnect(app, state.vpn.clone(), device_id(&state))
 }
 
 #[tauri::command]
@@ -46,20 +46,18 @@ pub fn save_settings(
     Ok(settings)
 }
 
-/// Возвращает текущее согласие: None = не спрашивали, Some(bool) = ответил
 #[tauri::command]
 pub fn get_telemetry_consent(state: State<'_, AppState>) -> Result<Option<bool>, String> {
     let settings = state.settings.lock().map_err(|e| e.to_string())?;
     Ok(settings.telemetry_consent)
 }
 
-/// Сохраняет ответ пользователя и при согласии отправляет первое событие
 #[tauri::command]
 pub async fn set_telemetry_consent(
     consent: bool,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    let device_id = {
+    let dev_id = {
         let mut settings = state.settings.lock().map_err(|e| e.to_string())?;
         settings.telemetry_consent = Some(consent);
         settings.save().map_err(|e| e.to_string())?;
@@ -67,8 +65,7 @@ pub async fn set_telemetry_consent(
     };
 
     if consent {
-        let payload = telemetry::TelemetryPayload::new(&device_id, "app_launch");
-        telemetry::send(&payload).await;
+        send_vpn_event(&dev_id, "app_launch").await;
     }
 
     Ok(())
@@ -78,8 +75,8 @@ pub fn toggle_from_tray(app: AppHandle) {
     #[cfg(desktop)]
     {
         let state = app.state::<AppState>();
-        let status = match state.vpn.lock() {
-            Ok(vpn) => vpn.status(),
+        let (status, dev_id) = match state.vpn.lock() {
+            Ok(vpn) => (vpn.status(), device_id(&state)),
             Err(error) => {
                 log::error!("ошибка backend: {error}");
                 return;
@@ -87,9 +84,9 @@ pub fn toggle_from_tray(app: AppHandle) {
         };
 
         let result = match status {
-            VpnStatus::Connected => request_disconnect(app.clone(), state.vpn.clone()),
+            VpnStatus::Connected => request_disconnect(app.clone(), state.vpn.clone(), dev_id),
             VpnStatus::Disconnected | VpnStatus::Error => {
-                request_connect(app.clone(), state.vpn.clone())
+                request_connect(app.clone(), state.vpn.clone(), dev_id)
             }
             _ => Ok(status),
         };
@@ -104,6 +101,7 @@ pub fn toggle_from_tray(app: AppHandle) {
 pub fn request_connect(
     app: AppHandle,
     vpn: Arc<Mutex<Box<dyn VpnBackend>>>,
+    dev_id: String,
 ) -> Result<VpnStatus, String> {
     log::info!("запрос подключения");
     {
@@ -120,15 +118,14 @@ pub fn request_connect(
         tokio::time::sleep(Duration::from_millis(1_300)).await;
         let result = match vpn.lock() {
             Ok(mut backend) => backend.complete_connect().map(|_| backend.status()),
-            Err(error) => Err(crate::vpn::error::VpnError::BackendFailed(
-                error.to_string(),
-            )),
+            Err(error) => Err(crate::vpn::error::VpnError::BackendFailed(error.to_string())),
         };
 
         match result {
             Ok(status) => {
                 log::info!("успешное mock-подключение");
                 let _ = emit_status(&app, status);
+                send_vpn_event(&dev_id, "vpn_connected").await;
             }
             Err(error) => {
                 log::error!("ошибка backend: {error}");
@@ -143,6 +140,7 @@ pub fn request_connect(
 pub fn request_disconnect(
     app: AppHandle,
     vpn: Arc<Mutex<Box<dyn VpnBackend>>>,
+    dev_id: String,
 ) -> Result<VpnStatus, String> {
     log::info!("запрос отключения");
     {
@@ -159,15 +157,14 @@ pub fn request_disconnect(
         tokio::time::sleep(Duration::from_millis(900)).await;
         let result = match vpn.lock() {
             Ok(mut backend) => backend.complete_disconnect().map(|_| backend.status()),
-            Err(error) => Err(crate::vpn::error::VpnError::BackendFailed(
-                error.to_string(),
-            )),
+            Err(error) => Err(crate::vpn::error::VpnError::BackendFailed(error.to_string())),
         };
 
         match result {
             Ok(status) => {
                 log::info!("успешное mock-отключение");
                 let _ = emit_status(&app, status);
+                send_vpn_event(&dev_id, "vpn_disconnected").await;
             }
             Err(error) => {
                 log::error!("ошибка backend: {error}");
@@ -184,4 +181,15 @@ fn emit_status(app: &AppHandle, status: VpnStatus) -> Result<(), String> {
     tray::update_tray(app, status).map_err(|error| error.to_string())?;
     app.emit("vpn-status-changed", status)
         .map_err(|error| error.to_string())
+}
+
+fn device_id(state: &State<'_, AppState>) -> String {
+    state.settings.lock()
+        .map(|s| s.device_id.clone())
+        .unwrap_or_default()
+}
+
+async fn send_vpn_event(dev_id: &str, event: &str) {
+    let payload = telemetry::TelemetryPayload::new(dev_id, event);
+    telemetry::send(&payload).await;
 }
