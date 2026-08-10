@@ -2,13 +2,9 @@
   <main class="vpn-shell">
     <header class="app-header">
       <div class="app-logo">
-        <div class="app-logo__mark" aria-hidden="true">
-          <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M2 2L9.5 11L2 20H6.5L11 14.2L15.5 20H20L12.5 11L20 2H15.5L11 7.8L6.5 2H2Z" fill="white"/>
-          </svg>
-        </div>
+        <img class="app-logo__mark" :src="xStackLogo" alt="xStack" />
         <div class="app-logo__text">
-          <p class="app-kicker">xStack VPN</p>
+          <p class="app-kicker">Corporate secure access</p>
           <h1>{{ labels.appName }}</h1>
         </div>
       </div>
@@ -74,6 +70,7 @@ import StatsPanel from '../components/StatsPanel.vue';
 import StatusIndicator from '../components/StatusIndicator.vue';
 import { statusText, t } from '../services/i18n';
 import { useVpnStore } from '../stores/vpnStore';
+import xStackLogo from '../assets/brand/xstack-logo.png';
 
 const store = useVpnStore();
 const settingsOpen = ref(false);

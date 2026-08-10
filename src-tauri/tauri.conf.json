@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Mock VPN Client",
+  "productName": "xStack VPN",
   "version": "0.1.0",
   "identifier": "com.example.mockvpnclient",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Mock VPN Client",
+        "title": "xStack VPN",
         "width": 500,
         "height": 640,
         "minWidth": 380,
@@ -47,7 +47,7 @@
         "installerIcon": "icons/icon.ico"
       }
     },
-    "shortDescription": "Mock VPN client",
-    "longDescription": "A lightweight cross-platform VPN client MVP with mock connection logic."
+    "shortDescription": "xStack VPN client",
+    "longDescription": "A lightweight cross-platform xStack VPN client MVP with mock connection logic."
   }
 }
