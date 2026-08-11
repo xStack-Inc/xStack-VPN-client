@@ -24,8 +24,7 @@ pub fn run() {
     #[cfg(desktop)]
     let auto_connect = settings.auto_connect;
 
-    let builder = tauri::Builder::default()
-        .plugin(tauri_plugin_log::Builder::new().build());
+    let builder = tauri::Builder::default().plugin(tauri_plugin_log::Builder::new().build());
 
     #[cfg(desktop)]
     let builder = builder.plugin(tauri_plugin_autostart::init(
@@ -53,7 +52,9 @@ pub fn run() {
 
                 if auto_connect {
                     let state = app.state::<AppState>();
-                    let dev_id = state.settings.lock()
+                    let dev_id = state
+                        .settings
+                        .lock()
                         .map(|s| s.device_id.clone())
                         .unwrap_or_default();
                     if let Err(error) =

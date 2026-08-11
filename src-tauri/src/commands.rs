@@ -118,7 +118,9 @@ pub fn request_connect(
         tokio::time::sleep(Duration::from_millis(1_300)).await;
         let result = match vpn.lock() {
             Ok(mut backend) => backend.complete_connect().map(|_| backend.status()),
-            Err(error) => Err(crate::vpn::error::VpnError::BackendFailed(error.to_string())),
+            Err(error) => Err(crate::vpn::error::VpnError::BackendFailed(
+                error.to_string(),
+            )),
         };
 
         match result {
@@ -157,7 +159,9 @@ pub fn request_disconnect(
         tokio::time::sleep(Duration::from_millis(900)).await;
         let result = match vpn.lock() {
             Ok(mut backend) => backend.complete_disconnect().map(|_| backend.status()),
-            Err(error) => Err(crate::vpn::error::VpnError::BackendFailed(error.to_string())),
+            Err(error) => Err(crate::vpn::error::VpnError::BackendFailed(
+                error.to_string(),
+            )),
         };
 
         match result {
@@ -184,7 +188,9 @@ fn emit_status(app: &AppHandle, status: VpnStatus) -> Result<(), String> {
 }
 
 fn device_id(state: &State<'_, AppState>) -> String {
-    state.settings.lock()
+    state
+        .settings
+        .lock()
         .map(|s| s.device_id.clone())
         .unwrap_or_default()
 }

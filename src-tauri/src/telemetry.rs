@@ -1,6 +1,7 @@
-use std::net::{IpAddr, UdpSocket};
-use serde::Serialize;
 use chrono::Local;
+use reqwest::header::{HeaderValue, AUTHORIZATION};
+use serde::Serialize;
+use std::net::{IpAddr, UdpSocket};
 
 const TELEMETRY_URL: &str = match option_env!("TELEMETRY_URL") {
     Some(v) => v,
@@ -81,16 +82,25 @@ pub async fn send(payload: &TelemetryPayload) {
         }
     };
 
-    match client
-        .post(TELEMETRY_URL)
-        .header("X-Auth-User", TELEMETRY_AUTH)
-        .json(payload)
-        .send()
-        .await
-    {
+    let mut request = client.post(TELEMETRY_URL).json(payload);
+
+    if let Some(auth_header) = telemetry_authorization_header(TELEMETRY_AUTH) {
+        request = request.header(AUTHORIZATION, auth_header);
+    }
+
+    match request.send().await {
         Ok(r) => log::debug!("telemetry: sent, status={}", r.status()),
         Err(e) => log::warn!("telemetry: send failed: {e}"),
     }
+}
+
+fn telemetry_authorization_header(base64_credentials: &str) -> Option<HeaderValue> {
+    let credentials = base64_credentials.trim();
+    if credentials.is_empty() {
+        return None;
+    }
+
+    HeaderValue::from_str(&format!("Basic {credentials}")).ok()
 }
 
 // ---------------------------------------------------------------------------
@@ -179,7 +189,12 @@ fn collect_ad_info(hostname: &str) -> AdInfo {
             .map(|d| !d.eq_ignore_ascii_case(hostname))
             .unwrap_or(false);
 
-        AdInfo { domain, dns_domain, logon_server, is_domain_user }
+        AdInfo {
+            domain,
+            dns_domain,
+            logon_server,
+            is_domain_user,
+        }
     }
     #[cfg(not(target_os = "windows"))]
     {
@@ -193,7 +208,12 @@ fn collect_ad_info(hostname: &str) -> AdInfo {
             .map(|d| !d.eq_ignore_ascii_case(hostname))
             .unwrap_or(false);
 
-        AdInfo { domain, dns_domain: None, logon_server: None, is_domain_user }
+        AdInfo {
+            domain,
+            dns_domain: None,
+            logon_server: None,
+            is_domain_user,
+        }
     }
 }
 
@@ -225,7 +245,11 @@ fn os_version() -> String {
             ],
         );
         let ver = ver.trim().to_string();
-        if ver.is_empty() { "unknown".to_string() } else { ver }
+        if ver.is_empty() {
+            "unknown".to_string()
+        } else {
+            ver
+        }
     }
     #[cfg(target_os = "macos")]
     {
@@ -236,9 +260,11 @@ fn os_version() -> String {
         std::fs::read_to_string("/etc/os-release")
             .ok()
             .and_then(|s| {
-                s.lines()
-                    .find(|l| l.starts_with("PRETTY_NAME="))
-                    .map(|l| l.trim_start_matches("PRETTY_NAME=").trim_matches('"').to_string())
+                s.lines().find(|l| l.starts_with("PRETTY_NAME=")).map(|l| {
+                    l.trim_start_matches("PRETTY_NAME=")
+                        .trim_matches('"')
+                        .to_string()
+                })
             })
             .unwrap_or_else(|| "linux".to_string())
     }
@@ -275,4 +301,27 @@ fn cmd_output(program: &str, args: &[&str]) -> String {
         .and_then(|o| String::from_utf8(o.stdout).ok())
         .map(|s| s.trim().to_string())
         .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn builds_basic_authorization_header_from_base64_credentials() {
+        let header = telemetry_authorization_header("dXNlcjpQQHNzdzByZA==").unwrap();
+        assert_eq!(header.to_str().unwrap(), "Basic dXNlcjpQQHNzdzByZA==");
+    }
+
+    #[test]
+    fn trims_basic_authorization_credentials() {
+        let header = telemetry_authorization_header("  dXNlcjpQQHNzdzByZA==\n").unwrap();
+        assert_eq!(header.to_str().unwrap(), "Basic dXNlcjpQQHNzdzByZA==");
+    }
+
+    #[test]
+    fn skips_authorization_header_when_credentials_are_empty() {
+        assert!(telemetry_authorization_header("").is_none());
+        assert!(telemetry_authorization_header("   ").is_none());
+    }
 }
