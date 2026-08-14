@@ -1,0 +1,15 @@
+node_modules/
+dist/
+target/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/gen/android/build/
+src-tauri/gen/android/.gradle/
+src-tauri/gen/android/app/build/
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.local
+coverage/
+src-tauri/icons/*.iconset/
