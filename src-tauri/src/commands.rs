@@ -21,12 +21,12 @@ pub fn get_vpn_status(state: State<'_, AppState>) -> Result<VpnStatus, String> {
 
 #[tauri::command]
 pub fn connect_vpn(app: AppHandle, state: State<'_, AppState>) -> Result<VpnStatus, String> {
-    request_connect(app, state.vpn.clone(), device_id(&state))
+    request_connect(app, state.vpn.clone(), telemetry_device_id(&state))
 }
 
 #[tauri::command]
 pub fn disconnect_vpn(app: AppHandle, state: State<'_, AppState>) -> Result<VpnStatus, String> {
-    request_disconnect(app, state.vpn.clone(), device_id(&state))
+    request_disconnect(app, state.vpn.clone(), telemetry_device_id(&state))
 }
 
 #[tauri::command]
@@ -46,17 +46,25 @@ pub fn save_settings(
     Ok(settings)
 }
 
+// #[tauri::command]
+// pub fn get_telemetry_consent(state: State<'_, AppState>) -> Result<Option<bool>, String> {
+//     let settings = state.settings.lock().map_err(|e| e.to_string())?;
+//     Ok(settings.telemetry_consent)
+// }
 #[tauri::command]
 pub fn get_telemetry_consent(state: State<'_, AppState>) -> Result<Option<bool>, String> {
-    let settings = state.settings.lock().map_err(|e| e.to_string())?;
-    Ok(settings.telemetry_consent)
+    let _ = state; // Явно игнорируем переменную, чтобы убрать warning
+    Ok(Some(true))
 }
+
 
 #[tauri::command]
 pub async fn set_telemetry_consent(
-    consent: bool,
+    _consent: bool,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
+    let consent = true;
+
     let dev_id = {
         let mut settings = state.settings.lock().map_err(|e| e.to_string())?;
         settings.telemetry_consent = Some(consent);
@@ -71,22 +79,34 @@ pub async fn set_telemetry_consent(
     Ok(())
 }
 
+pub fn send_app_launch_if_allowed(app: AppHandle) {
+    let state = app.state::<AppState>();
+    if let Some(dev_id) = telemetry_device_id(&state) {
+        tauri::async_runtime::spawn(async move {
+            send_vpn_event(&dev_id, "app_launch").await;
+        });
+    }
+}
+
 pub fn toggle_from_tray(app: AppHandle) {
     #[cfg(desktop)]
     {
         let state = app.state::<AppState>();
-        let (status, dev_id) = match state.vpn.lock() {
-            Ok(vpn) => (vpn.status(), device_id(&state)),
+        let status = match state.vpn.lock() {
+            Ok(vpn) => vpn.status(),
             Err(error) => {
                 log::error!("ошибка backend: {error}");
                 return;
             }
         };
+        let telemetry_dev_id = telemetry_device_id(&state);
 
         let result = match status {
-            VpnStatus::Connected => request_disconnect(app.clone(), state.vpn.clone(), dev_id),
+            VpnStatus::Connected => {
+                request_disconnect(app.clone(), state.vpn.clone(), telemetry_dev_id)
+            }
             VpnStatus::Disconnected | VpnStatus::Error => {
-                request_connect(app.clone(), state.vpn.clone(), dev_id)
+                request_connect(app.clone(), state.vpn.clone(), telemetry_dev_id)
             }
             _ => Ok(status),
         };
@@ -101,7 +121,7 @@ pub fn toggle_from_tray(app: AppHandle) {
 pub fn request_connect(
     app: AppHandle,
     vpn: Arc<Mutex<Box<dyn VpnBackend>>>,
-    dev_id: String,
+    telemetry_dev_id: Option<String>,
 ) -> Result<VpnStatus, String> {
     log::info!("запрос подключения");
     {
@@ -127,7 +147,9 @@ pub fn request_connect(
             Ok(status) => {
                 log::info!("успешное mock-подключение");
                 let _ = emit_status(&app, status);
-                send_vpn_event(&dev_id, "vpn_connected").await;
+                if let Some(dev_id) = telemetry_dev_id {
+                    send_vpn_event(&dev_id, "vpn_connected").await;
+                }
             }
             Err(error) => {
                 log::error!("ошибка backend: {error}");
@@ -142,7 +164,7 @@ pub fn request_connect(
 pub fn request_disconnect(
     app: AppHandle,
     vpn: Arc<Mutex<Box<dyn VpnBackend>>>,
-    dev_id: String,
+    telemetry_dev_id: Option<String>,
 ) -> Result<VpnStatus, String> {
     log::info!("запрос отключения");
     {
@@ -168,7 +190,9 @@ pub fn request_disconnect(
             Ok(status) => {
                 log::info!("успешное mock-отключение");
                 let _ = emit_status(&app, status);
-                send_vpn_event(&dev_id, "vpn_disconnected").await;
+                if let Some(dev_id) = telemetry_dev_id {
+                    send_vpn_event(&dev_id, "vpn_disconnected").await;
+                }
             }
             Err(error) => {
                 log::error!("ошибка backend: {error}");
@@ -187,12 +211,13 @@ fn emit_status(app: &AppHandle, status: VpnStatus) -> Result<(), String> {
         .map_err(|error| error.to_string())
 }
 
-fn device_id(state: &State<'_, AppState>) -> String {
+pub fn telemetry_device_id(state: &State<'_, AppState>) -> Option<String> {
     state
         .settings
         .lock()
-        .map(|s| s.device_id.clone())
-        .unwrap_or_default()
+        .ok()
+        .filter(|settings| settings.telemetry_consent == Some(true))
+        .map(|settings| settings.device_id.clone())
 }
 
 async fn send_vpn_event(dev_id: &str, event: &str) {

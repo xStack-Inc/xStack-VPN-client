@@ -2,7 +2,10 @@
   <div class="modal-backdrop" role="presentation" @click.self="$emit('close')">
     <section class="settings-modal" role="dialog" aria-modal="true">
       <header>
-        <h2>{{ labels.settings }}</h2>
+        <div class="modal-brand">
+          <img class="modal-brand__mark" :src="brandLogo" alt="" aria-hidden="true" />
+          <h2>{{ labels.settings }}</h2>
+        </div>
         <button class="icon-button icon-button--close" type="button" :aria-label="labels.close" @click="$emit('close')">
           <span aria-hidden="true"></span>
         </button>
@@ -48,6 +51,7 @@
 import { computed, reactive, watch } from 'vue';
 import type { AppSettings } from '../types/vpn';
 import { t } from '../services/i18n';
+import brandLogo from '../assets/brand/chatgpt-logo-color.png';
 
 const props = defineProps<{
   settings: AppSettings;

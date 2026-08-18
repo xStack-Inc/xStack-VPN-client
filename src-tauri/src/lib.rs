@@ -45,6 +45,7 @@ pub fn run() {
         ])
         .setup(move |app| {
             log::info!("запуск приложения");
+            commands::send_app_launch_if_allowed(app.handle().clone());
 
             #[cfg(desktop)]
             {
@@ -52,14 +53,12 @@ pub fn run() {
 
                 if auto_connect {
                     let state = app.state::<AppState>();
-                    let dev_id = state
-                        .settings
-                        .lock()
-                        .map(|s| s.device_id.clone())
-                        .unwrap_or_default();
-                    if let Err(error) =
-                        commands::request_connect(app.handle().clone(), state.vpn.clone(), dev_id)
-                    {
+                    let telemetry_dev_id = commands::telemetry_device_id(&state);
+                    if let Err(error) = commands::request_connect(
+                        app.handle().clone(),
+                        state.vpn.clone(),
+                        telemetry_dev_id,
+                    ) {
                         log::error!("ошибка автоподключения: {error}");
                     }
                 }

@@ -688,6 +688,21 @@ h1 {
   color: var(--dark);
 }
 
+.modal-brand {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: var(--space-3);
+}
+
+.modal-brand__mark {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 14px rgba(99, 128, 252, 0.18));
+}
+
 .setting-row {
   min-height: 50px;
   border-bottom: var(--line) solid var(--border);

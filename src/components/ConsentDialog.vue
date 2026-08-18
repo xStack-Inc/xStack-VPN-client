@@ -2,7 +2,10 @@
   <div class="modal-backdrop" role="presentation">
     <section class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="consent-title">
       <header>
-        <h2 id="consent-title">{{ labels.telemetryConsentTitle }}</h2>
+        <div class="modal-brand">
+          <img class="modal-brand__mark" :src="brandLogo" alt="" aria-hidden="true" />
+          <h2 id="consent-title">{{ labels.telemetryConsentTitle }}</h2>
+        </div>
       </header>
 
       <p class="consent-body">{{ labels.telemetryConsentBody }}</p>
@@ -23,6 +26,7 @@
 import { computed } from 'vue';
 import type { Language } from '../types/vpn';
 import { t } from '../services/i18n';
+import brandLogo from '../assets/brand/chatgpt-logo-color.png';
 
 const props = defineProps<{ language: Language }>();
 const emit = defineEmits<{ respond: [consent: boolean] }>();

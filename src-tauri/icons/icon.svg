@@ -1,1 +1,3 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M142 378V156h226v204" stroke="#242a28" stroke-width="54"/><path d="M218 298h150" stroke="#208463" stroke-width="48"/><circle cx="142" cy="378" r="58" fill="#208463"/><circle cx="368" cy="156" r="58" fill="#208463"/><circle cx="368" cy="360" r="48" fill="#242a28"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <image href="icon.png" width="512" height="512" preserveAspectRatio="xMidYMid meet"/>
+</svg>

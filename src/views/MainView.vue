@@ -2,7 +2,7 @@
   <main class="vpn-shell">
     <header class="app-header">
       <div class="app-logo">
-        <img class="app-logo__mark" :src="xStackLogo" alt="xStack" />
+        <img class="app-logo__mark" :src="brandLogo" alt="xStack VPN" />
         <div class="app-logo__text">
           <p class="app-kicker">Corporate secure access</p>
           <h1>{{ labels.appName }}</h1>
@@ -70,7 +70,7 @@ import StatsPanel from '../components/StatsPanel.vue';
 import StatusIndicator from '../components/StatusIndicator.vue';
 import { statusText, t } from '../services/i18n';
 import { useVpnStore } from '../stores/vpnStore';
-import xStackLogo from '../assets/brand/xstack-logo.png';
+import brandLogo from '../assets/brand/chatgpt-logo-color.png';
 
 const store = useVpnStore();
 const settingsOpen = ref(false);
