@@ -46,23 +46,18 @@ pub fn save_settings(
     Ok(settings)
 }
 
-// #[tauri::command]
-// pub fn get_telemetry_consent(state: State<'_, AppState>) -> Result<Option<bool>, String> {
-//     let settings = state.settings.lock().map_err(|e| e.to_string())?;
-//     Ok(settings.telemetry_consent)
-// }
 #[tauri::command]
 pub fn get_telemetry_consent(state: State<'_, AppState>) -> Result<Option<bool>, String> {
-    let _ = state; // Явно игнорируем переменную, чтобы убрать warning
-    Ok(Some(true))
+    let settings = state.settings.lock().map_err(|e| e.to_string())?;
+    Ok(settings.telemetry_consent)
 }
-
 
 #[tauri::command]
 pub async fn set_telemetry_consent(
     _consent: bool,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
+    
     let consent = true;
 
     let dev_id = {

@@ -47,7 +47,9 @@ impl AppSettings {
     pub fn load() -> io::Result<Self> {
         let path = settings_path()?;
         if !path.exists() {
-            return Ok(Self::default());
+            let settings = Self::default();
+            settings.save()?;
+            return Ok(settings);
         }
 
         let raw = fs::read_to_string(path)?;
