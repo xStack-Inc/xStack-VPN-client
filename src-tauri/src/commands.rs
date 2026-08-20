@@ -113,6 +113,9 @@ pub fn send_app_launch_if_allowed(app: AppHandle) {
 }
 
 pub fn toggle_from_tray(app: AppHandle) {
+    #[cfg(not(desktop))]
+    let _ = app;
+
     #[cfg(desktop)]
     {
         let state = app.state::<AppState>();

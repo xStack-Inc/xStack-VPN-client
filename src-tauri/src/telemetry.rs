@@ -1,7 +1,9 @@
 use chrono::Local;
 use reqwest::header::{HeaderValue, AUTHORIZATION};
 use serde::Serialize;
-use std::net::{IpAddr, UdpSocket};
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+use std::net::IpAddr;
+use std::net::UdpSocket;
 
 use crate::settings::AppSettings;
 
