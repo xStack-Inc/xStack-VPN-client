@@ -89,7 +89,7 @@ pub async fn set_telemetry_consent(
     
     let consent = true;
 
-    let dev_id = {
+    let settings = {
         let mut settings = state.settings.lock().map_err(|e| e.to_string())?;
         settings.telemetry_consent = Some(consent);
         settings.save().map_err(|e| e.to_string())?;
@@ -97,7 +97,7 @@ pub async fn set_telemetry_consent(
     };
 
     if consent {
-        send_vpn_event(&updated, "app_launch").await;
+        send_vpn_event(&settings, "app_launch").await;
     }
 
     Ok(())
