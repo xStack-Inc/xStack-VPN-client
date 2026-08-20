@@ -56,6 +56,39 @@ const state = reactive<VpnStoreState>({
 let timer: number | null = null;
 let unsubscribeStatus: (() => void) | null = null;
 
+const ANDROID_ACCOUNT_EMAIL_KEY = 'xstack.vpn.androidAccountEmail';
+const ANDROID_ACCOUNT_TYPE_KEY = 'xstack.vpn.androidAccountType';
+
+function readCachedAndroidAccount(): { email: string; accountType: string | null } | null {
+  if (!isAndroidRuntime()) {
+    return null;
+  }
+
+  const email = window.localStorage.getItem(ANDROID_ACCOUNT_EMAIL_KEY);
+  if (!email) {
+    return null;
+  }
+
+  return {
+    email,
+    accountType: window.localStorage.getItem(ANDROID_ACCOUNT_TYPE_KEY),
+  };
+}
+
+function cacheAndroidAccount(email: string, accountType?: string | null) {
+  if (!isAndroidRuntime()) {
+    return;
+  }
+
+  window.localStorage.setItem(ANDROID_ACCOUNT_EMAIL_KEY, email);
+
+  if (accountType) {
+    window.localStorage.setItem(ANDROID_ACCOUNT_TYPE_KEY, accountType);
+  } else {
+    window.localStorage.removeItem(ANDROID_ACCOUNT_TYPE_KEY);
+  }
+}
+
 function startStatsTimer() {
   stopStatsTimer();
   timer = window.setInterval(() => {
@@ -107,6 +140,20 @@ export function useVpnStore() {
 
     const [settings, status] = await Promise.all([getSettings(), getVpnStatus()]);
     state.settings = settings;
+
+    const cachedAccount = readCachedAndroidAccount();
+    if (!state.settings.androidAccountEmail && cachedAccount) {
+      try {
+        state.settings = await saveAndroidAccount(cachedAccount.email, cachedAccount.accountType);
+      } catch {
+        state.settings = {
+          ...state.settings,
+          androidAccountEmail: cachedAccount.email,
+          androidAccountType: cachedAccount.accountType,
+        };
+      }
+    }
+
     applyStatus(status);
     unsubscribeStatus = await onVpnStatusChanged(applyStatus);
     state.isLoaded = true;
@@ -156,6 +203,25 @@ export function useVpnStore() {
       return true;
     }
 
+    const cachedAccount = readCachedAndroidAccount();
+    if (cachedAccount) {
+      try {
+        const saved = await saveAndroidAccount(cachedAccount.email, cachedAccount.accountType);
+        state.settings = {
+          ...saved,
+          androidAccountEmail: saved.androidAccountEmail ?? cachedAccount.email,
+          androidAccountType: saved.androidAccountType ?? cachedAccount.accountType,
+        };
+      } catch {
+        state.settings = {
+          ...state.settings,
+          androidAccountEmail: cachedAccount.email,
+          androidAccountType: cachedAccount.accountType,
+        };
+      }
+      return true;
+    }
+
     state.androidAccountRequesting = true;
     try {
       const selected = await requestAndroidAccount();
@@ -164,7 +230,21 @@ export function useVpnStore() {
         return false;
       }
 
-      state.settings = await saveAndroidAccount(selected.email, selected.accountType);
+      cacheAndroidAccount(selected.email, selected.accountType);
+      try {
+        const saved = await saveAndroidAccount(selected.email, selected.accountType);
+        state.settings = {
+          ...saved,
+          androidAccountEmail: saved.androidAccountEmail ?? selected.email,
+          androidAccountType: saved.androidAccountType ?? selected.accountType ?? null,
+        };
+      } catch {
+        state.settings = {
+          ...state.settings,
+          androidAccountEmail: selected.email,
+          androidAccountType: selected.accountType ?? null,
+        };
+      }
       return true;
     } catch (error) {
       state.androidAccountError = error instanceof Error

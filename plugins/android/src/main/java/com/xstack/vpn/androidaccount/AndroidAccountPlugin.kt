@@ -3,6 +3,7 @@ package com.xstack.vpn.androidaccount
 import android.accounts.AccountManager
 import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.activity.result.ActivityResult
@@ -15,8 +16,19 @@ import app.tauri.plugin.Plugin
 
 @TauriPlugin
 class AndroidAccountPlugin(private val activity: Activity): Plugin(activity) {
+    companion object {
+        private const val PREFS_NAME = "xstack_vpn_android_account"
+        private const val KEY_ACCOUNT_NAME = "account_name"
+        private const val KEY_ACCOUNT_TYPE = "account_type"
+    }
     @Command
     fun requestAccount(invoke: Invoke) {
+        val saved = savedAccount()
+        if (saved != null) {
+            resolveGranted(invoke, saved.name, saved.type)
+            return
+        }
+
         val intent = chooseAccountIntent()
 
         try {
@@ -42,12 +54,8 @@ class AndroidAccountPlugin(private val activity: Activity): Plugin(activity) {
             return
         }
 
-        val response = JSObject()
-        response.put("granted", true)
-        response.put("email", accountName)
-        response.put("accountType", accountType)
-        response.put("reason", null)
-        invoke.resolve(response)
+        saveAccount(accountName, accountType)
+        resolveGranted(invoke, accountName, accountType)
     }
 
     private fun chooseAccountIntent(): Intent {
@@ -76,6 +84,33 @@ class AndroidAccountPlugin(private val activity: Activity): Plugin(activity) {
                 null,
             )
         }
+    }
+
+    private data class StoredAccount(val name: String, val type: String?)
+
+    private fun savedAccount(): StoredAccount? {
+        val prefs = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val name = prefs.getString(KEY_ACCOUNT_NAME, null)?.takeIf { it.isNotBlank() }
+            ?: return null
+        val type = prefs.getString(KEY_ACCOUNT_TYPE, null)?.takeIf { it.isNotBlank() }
+        return StoredAccount(name, type)
+    }
+
+    private fun saveAccount(name: String, type: String?) {
+        activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_ACCOUNT_NAME, name)
+            .putString(KEY_ACCOUNT_TYPE, type)
+            .apply()
+    }
+
+    private fun resolveGranted(invoke: Invoke, name: String, type: String?) {
+        val response = JSObject()
+        response.put("granted", true)
+        response.put("email", name)
+        response.put("accountType", type)
+        response.put("reason", null)
+        invoke.resolve(response)
     }
 
     private fun resolveDenied(invoke: Invoke, reason: String) {
