@@ -264,6 +264,9 @@ jobs:
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
 
+      - name: Generate Android app icons
+        run: npm run tauri -- icon src-tauri/icons/icon.png
+
       - name: Build APK
         run: npm run tauri android build -- --apk --target aarch64
         env:
