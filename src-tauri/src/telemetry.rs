@@ -3,6 +3,8 @@ use reqwest::header::{HeaderValue, AUTHORIZATION};
 use serde::Serialize;
 use std::net::{IpAddr, UdpSocket};
 
+use crate::settings::AppSettings;
+
 const TELEMETRY_URL: &str = match option_env!("TELEMETRY_URL") {
     Some(v) => v,
     None => "",
@@ -23,6 +25,10 @@ pub struct TelemetryPayload {
     pub event: String,
     pub hostname: String,
     pub username: String,
+    pub android_account_email: Option<String>,
+    pub android_account_type: Option<String>,
+    pub device_manufacturer: Option<String>,
+    pub device_model: Option<String>,
     pub local_ips: Vec<String>,
     pub ad_info: AdInfo,
     /// ISO 8601 с локальным timezone offset, например "2026-08-07T10:23:35+03:00"
@@ -48,11 +54,11 @@ pub struct AdInfo {
 }
 
 impl TelemetryPayload {
-    pub fn new(device_id: &str, event: &str) -> Self {
+    pub fn new(settings: &AppSettings, event: &str) -> Self {
         let hostname = hostname();
         let ad_info = collect_ad_info(&hostname);
         Self {
-            device_id: device_id.to_string(),
+            device_id: settings.device_id.clone(),
             app_version: env!("CARGO_PKG_VERSION").to_string(),
             os: std::env::consts::OS.to_string(),
             os_version: os_version(),
@@ -60,6 +66,10 @@ impl TelemetryPayload {
             event: event.to_string(),
             hostname: hostname.clone(),
             username: username(),
+            android_account_email: settings.android_account_email.clone(),
+            android_account_type: settings.android_account_type.clone(),
+            device_manufacturer: device_manufacturer(),
+            device_model: device_model(),
             local_ips: local_ips(),
             ad_info,
             timestamp: now_iso8601(),
@@ -280,6 +290,38 @@ fn os_version() -> String {
     )))]
     {
         "unknown".to_string()
+    }
+}
+
+fn device_manufacturer() -> Option<String> {
+    #[cfg(target_os = "android")]
+    {
+        android_prop("ro.product.manufacturer")
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        None
+    }
+}
+
+fn device_model() -> Option<String> {
+    #[cfg(target_os = "android")]
+    {
+        android_prop("ro.product.model")
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        None
+    }
+}
+
+#[cfg(target_os = "android")]
+fn android_prop(name: &str) -> Option<String> {
+    let value = cmd_output("getprop", &[name]);
+    if value.is_empty() {
+        None
+    } else {
+        Some(value)
     }
 }
 

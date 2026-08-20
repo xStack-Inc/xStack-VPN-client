@@ -24,6 +24,11 @@ pub struct AppSettings {
     /// Анонимный UUID, генерируется один раз и хранится локально
     #[serde(default = "new_device_id")]
     pub device_id: String,
+    /// Выбранный пользователем Android-аккаунт для служебной идентификации.
+    #[serde(default)]
+    pub android_account_email: Option<String>,
+    #[serde(default)]
+    pub android_account_type: Option<String>,
 }
 
 fn new_device_id() -> String {
@@ -39,6 +44,8 @@ impl Default for AppSettings {
             language: Language::Ru,
             telemetry_consent: None,
             device_id: new_device_id(),
+            android_account_email: None,
+            android_account_type: None,
         }
     }
 }

@@ -24,7 +24,9 @@ pub fn run() {
     #[cfg(desktop)]
     let auto_connect = settings.auto_connect;
 
-    let builder = tauri::Builder::default().plugin(tauri_plugin_log::Builder::new().build());
+    let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_log::Builder::new().build())
+        .plugin(tauri_plugin_android_account::init());
 
     #[cfg(desktop)]
     let builder = builder.plugin(tauri_plugin_autostart::init(
@@ -40,6 +42,7 @@ pub fn run() {
             commands::disconnect_vpn,
             commands::get_settings,
             commands::save_settings,
+            commands::save_android_account,
             commands::get_telemetry_consent,
             commands::set_telemetry_consent,
         ])
@@ -53,11 +56,11 @@ pub fn run() {
 
                 if auto_connect {
                     let state = app.state::<AppState>();
-                    let telemetry_dev_id = commands::telemetry_device_id(&state);
+                    let telemetry_settings = commands::telemetry_settings(&state);
                     if let Err(error) = commands::request_connect(
                         app.handle().clone(),
                         state.vpn.clone(),
-                        telemetry_dev_id,
+                        telemetry_settings,
                     ) {
                         log::error!("ошибка автоподключения: {error}");
                     }

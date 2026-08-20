@@ -51,7 +51,7 @@
 import { computed, reactive, watch } from 'vue';
 import type { AppSettings } from '../types/vpn';
 import { t } from '../services/i18n';
-import brandLogo from '../assets/brand/chatgpt-logo-color.png';
+import brandLogo from '../assets/brand/xstack-logo.png';
 
 const props = defineProps<{
   settings: AppSettings;

@@ -24,6 +24,13 @@ export function saveSettings(settings: AppSettings): Promise<AppSettings> {
   return invoke<AppSettings>('save_settings', { settings });
 }
 
+export function saveAndroidAccount(email: string, accountType?: string | null): Promise<AppSettings> {
+  return invoke<AppSettings>('save_android_account', {
+    email,
+    accountType: accountType ?? null,
+  });
+}
+
 export function getTelemetryConsent(): Promise<boolean | null> {
   return invoke<boolean | null>('get_telemetry_consent');
 }
@@ -39,4 +46,3 @@ export async function onVpnStatusChanged(
     handler(event.payload);
   });
 }
-

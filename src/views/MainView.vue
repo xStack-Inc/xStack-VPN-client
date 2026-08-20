@@ -26,6 +26,8 @@
         <PowerButton
           :status="store.state.status"
           :language="store.state.settings.language"
+          :locked="androidAccountRequired"
+          :pending-access="store.state.androidAccountRequesting"
           @toggle="store.toggleVpn"
         />
         <div class="status-copy">
@@ -40,6 +42,11 @@
       :language="store.state.settings.language"
       :status="store.state.status"
     />
+
+    <section v-if="store.state.androidAccountError" class="error-line" role="alert">
+      <span>{{ store.state.androidAccountError }}</span>
+      <button type="button" @click="store.toggleVpn">{{ labels.retry }}</button>
+    </section>
 
     <section v-if="store.state.status === 'error'" class="error-line" role="alert">
       <span>{{ store.state.errorMessage ?? statusText('error', store.state.settings.language) }}</span>
@@ -70,12 +77,13 @@ import StatsPanel from '../components/StatsPanel.vue';
 import StatusIndicator from '../components/StatusIndicator.vue';
 import { statusText, t } from '../services/i18n';
 import { useVpnStore } from '../stores/vpnStore';
-import brandLogo from '../assets/brand/chatgpt-logo-color.png';
+import brandLogo from '../assets/brand/xstack-logo.png';
 
 const store = useVpnStore();
 const settingsOpen = ref(false);
 const labels = computed(() => t(store.state.settings.language));
 const shortStatus = computed(() => store.state.status.toUpperCase());
+const androidAccountRequired = computed(() => store.androidAccountRequired.value);
 
 onMounted(() => {
   void store.initialize();

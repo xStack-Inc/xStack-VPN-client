@@ -14,6 +14,8 @@ export interface AppSettings {
   language: Language;
   telemetryConsent: boolean | null;
   deviceId: string;
+  androidAccountEmail: string | null;
+  androidAccountType: string | null;
 }
 
 export interface VpnStats {
@@ -21,4 +23,3 @@ export interface VpnStats {
   durationSeconds: number;
   transferredBytes: number;
 }
-

@@ -21,12 +21,12 @@ pub fn get_vpn_status(state: State<'_, AppState>) -> Result<VpnStatus, String> {
 
 #[tauri::command]
 pub fn connect_vpn(app: AppHandle, state: State<'_, AppState>) -> Result<VpnStatus, String> {
-    request_connect(app, state.vpn.clone(), telemetry_device_id(&state))
+    request_connect(app, state.vpn.clone(), telemetry_settings(&state))
 }
 
 #[tauri::command]
 pub fn disconnect_vpn(app: AppHandle, state: State<'_, AppState>) -> Result<VpnStatus, String> {
-    request_disconnect(app, state.vpn.clone(), telemetry_device_id(&state))
+    request_disconnect(app, state.vpn.clone(), telemetry_settings(&state))
 }
 
 #[tauri::command]
@@ -47,6 +47,35 @@ pub fn save_settings(
 }
 
 #[tauri::command]
+pub async fn save_android_account(
+    email: String,
+    account_type: Option<String>,
+    state: State<'_, AppState>,
+) -> Result<AppSettings, String> {
+    let email = email.trim().to_string();
+    if email.is_empty() {
+        return Err("android account email is empty".to_string());
+    }
+
+    let updated = {
+        let mut settings = state.settings.lock().map_err(|error| error.to_string())?;
+        settings.android_account_email = Some(email);
+        settings.android_account_type = account_type.and_then(|value| {
+            let value = value.trim().to_string();
+            (!value.is_empty()).then_some(value)
+        });
+        settings.save().map_err(|error| error.to_string())?;
+        settings.clone()
+    };
+
+    if updated.telemetry_consent == Some(true) {
+        send_vpn_event(&updated, "android_account_selected").await;
+    }
+
+    Ok(updated)
+}
+
+#[tauri::command]
 pub fn get_telemetry_consent(state: State<'_, AppState>) -> Result<Option<bool>, String> {
     let settings = state.settings.lock().map_err(|e| e.to_string())?;
     Ok(settings.telemetry_consent)
@@ -64,11 +93,11 @@ pub async fn set_telemetry_consent(
         let mut settings = state.settings.lock().map_err(|e| e.to_string())?;
         settings.telemetry_consent = Some(consent);
         settings.save().map_err(|e| e.to_string())?;
-        settings.device_id.clone()
+        settings.clone()
     };
 
     if consent {
-        send_vpn_event(&dev_id, "app_launch").await;
+        send_vpn_event(&updated, "app_launch").await;
     }
 
     Ok(())
@@ -76,9 +105,9 @@ pub async fn set_telemetry_consent(
 
 pub fn send_app_launch_if_allowed(app: AppHandle) {
     let state = app.state::<AppState>();
-    if let Some(dev_id) = telemetry_device_id(&state) {
+    if let Some(settings) = telemetry_settings(&state) {
         tauri::async_runtime::spawn(async move {
-            send_vpn_event(&dev_id, "app_launch").await;
+            send_vpn_event(&settings, "app_launch").await;
         });
     }
 }
@@ -94,14 +123,14 @@ pub fn toggle_from_tray(app: AppHandle) {
                 return;
             }
         };
-        let telemetry_dev_id = telemetry_device_id(&state);
+        let telemetry_settings = telemetry_settings(&state);
 
         let result = match status {
             VpnStatus::Connected => {
-                request_disconnect(app.clone(), state.vpn.clone(), telemetry_dev_id)
+                request_disconnect(app.clone(), state.vpn.clone(), telemetry_settings)
             }
             VpnStatus::Disconnected | VpnStatus::Error => {
-                request_connect(app.clone(), state.vpn.clone(), telemetry_dev_id)
+                request_connect(app.clone(), state.vpn.clone(), telemetry_settings)
             }
             _ => Ok(status),
         };
@@ -116,7 +145,7 @@ pub fn toggle_from_tray(app: AppHandle) {
 pub fn request_connect(
     app: AppHandle,
     vpn: Arc<Mutex<Box<dyn VpnBackend>>>,
-    telemetry_dev_id: Option<String>,
+    telemetry_settings: Option<AppSettings>,
 ) -> Result<VpnStatus, String> {
     log::info!("запрос подключения");
     {
@@ -142,8 +171,8 @@ pub fn request_connect(
             Ok(status) => {
                 log::info!("успешное mock-подключение");
                 let _ = emit_status(&app, status);
-                if let Some(dev_id) = telemetry_dev_id {
-                    send_vpn_event(&dev_id, "vpn_connected").await;
+                if let Some(settings) = telemetry_settings {
+                    send_vpn_event(&settings, "vpn_connected").await;
                 }
             }
             Err(error) => {
@@ -159,7 +188,7 @@ pub fn request_connect(
 pub fn request_disconnect(
     app: AppHandle,
     vpn: Arc<Mutex<Box<dyn VpnBackend>>>,
-    telemetry_dev_id: Option<String>,
+    telemetry_settings: Option<AppSettings>,
 ) -> Result<VpnStatus, String> {
     log::info!("запрос отключения");
     {
@@ -185,8 +214,8 @@ pub fn request_disconnect(
             Ok(status) => {
                 log::info!("успешное mock-отключение");
                 let _ = emit_status(&app, status);
-                if let Some(dev_id) = telemetry_dev_id {
-                    send_vpn_event(&dev_id, "vpn_disconnected").await;
+                if let Some(settings) = telemetry_settings {
+                    send_vpn_event(&settings, "vpn_disconnected").await;
                 }
             }
             Err(error) => {
@@ -206,16 +235,16 @@ fn emit_status(app: &AppHandle, status: VpnStatus) -> Result<(), String> {
         .map_err(|error| error.to_string())
 }
 
-pub fn telemetry_device_id(state: &State<'_, AppState>) -> Option<String> {
+pub fn telemetry_settings(state: &State<'_, AppState>) -> Option<AppSettings> {
     state
         .settings
         .lock()
         .ok()
         .filter(|settings| settings.telemetry_consent == Some(true))
-        .map(|settings| settings.device_id.clone())
+        .map(|settings| settings.clone())
 }
 
-async fn send_vpn_event(dev_id: &str, event: &str) {
-    let payload = telemetry::TelemetryPayload::new(dev_id, event);
+async fn send_vpn_event(settings: &AppSettings, event: &str) {
+    let payload = telemetry::TelemetryPayload::new(settings, event);
     telemetry::send(&payload).await;
 }

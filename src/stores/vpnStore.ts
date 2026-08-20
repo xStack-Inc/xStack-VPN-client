@@ -1,6 +1,8 @@
 import { computed, reactive, readonly } from 'vue';
 import { disable, enable } from '@tauri-apps/plugin-autostart';
 import type { AppSettings, VpnStats, VpnStatus } from '../types/vpn';
+import { isAndroidRuntime, requestAndroidAccount } from '../services/androidAccount';
+import { t } from '../services/i18n';
 import {
   connectVpn,
   disconnectVpn,
@@ -8,6 +10,7 @@ import {
   getTelemetryConsent,
   getVpnStatus,
   onVpnStatusChanged,
+  saveAndroidAccount,
   saveSettings,
   setTelemetryConsent,
 } from '../services/tauriVpn';
@@ -19,6 +22,8 @@ interface VpnStoreState {
   stats: VpnStats;
   isLoaded: boolean;
   errorMessage: string | null;
+  androidAccountError: string | null;
+  androidAccountRequesting: boolean;
   showConsentDialog: boolean;
 }
 
@@ -29,6 +34,8 @@ const defaultSettings: AppSettings = {
   language: 'ru',
   telemetryConsent: null,
   deviceId: '',
+  androidAccountEmail: null,
+  androidAccountType: null,
 };
 
 const state = reactive<VpnStoreState>({
@@ -41,6 +48,8 @@ const state = reactive<VpnStoreState>({
   },
   isLoaded: false,
   errorMessage: null,
+  androidAccountError: null,
+  androidAccountRequesting: false,
   showConsentDialog: false,
 });
 
@@ -87,6 +96,9 @@ function applyStatus(status: VpnStatus) {
 export function useVpnStore() {
   const canToggle = computed(() => !isTransitioning(state.status));
   const isConnected = computed(() => state.status === 'connected');
+  const androidAccountRequired = computed(() =>
+    isAndroidRuntime() && !state.settings.androidAccountEmail,
+  );
 
   async function initialize() {
     if (state.isLoaded) {
@@ -113,13 +125,19 @@ export function useVpnStore() {
   }
 
   async function toggleVpn() {
-    if (!canToggle.value) {
+    if (!canToggle.value || state.androidAccountRequesting) {
       return;
     }
 
     state.errorMessage = null;
+    state.androidAccountError = null;
 
     if (canRequestConnect(state.status)) {
+      const hasAndroidAccount = await ensureAndroidAccount();
+      if (!hasAndroidAccount) {
+        return;
+      }
+
       applyStatus('connecting');
       const status = await connectVpn();
       applyStatus(status);
@@ -130,6 +148,31 @@ export function useVpnStore() {
       applyStatus('disconnecting');
       const status = await disconnectVpn();
       applyStatus(status);
+    }
+  }
+
+  async function ensureAndroidAccount(): Promise<boolean> {
+    if (!androidAccountRequired.value) {
+      return true;
+    }
+
+    state.androidAccountRequesting = true;
+    try {
+      const selected = await requestAndroidAccount();
+      if (!selected.granted || !selected.email) {
+        state.androidAccountError = t(state.settings.language).androidAccountDenied;
+        return false;
+      }
+
+      state.settings = await saveAndroidAccount(selected.email, selected.accountType);
+      return true;
+    } catch (error) {
+      state.androidAccountError = error instanceof Error
+        ? error.message
+        : t(state.settings.language).androidAccountDenied;
+      return false;
+    } finally {
+      state.androidAccountRequesting = false;
     }
   }
 
@@ -155,6 +198,7 @@ export function useVpnStore() {
     state: readonly(state),
     canToggle,
     isConnected,
+    androidAccountRequired,
     initialize,
     toggleVpn,
     updateSettings,
@@ -162,4 +206,3 @@ export function useVpnStore() {
     dispose,
   };
 }
-

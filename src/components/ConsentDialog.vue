@@ -26,7 +26,7 @@
 import { computed } from 'vue';
 import type { Language } from '../types/vpn';
 import { t } from '../services/i18n';
-import brandLogo from '../assets/brand/chatgpt-logo-color.png';
+import brandLogo from '../assets/brand/xstack-logo.png';
 
 const props = defineProps<{ language: Language }>();
 const emit = defineEmits<{ respond: [consent: boolean] }>();
