@@ -264,18 +264,67 @@ jobs:
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
 
-      - name: Build APK (debug)
+      - name: Build APK
         run: npm run tauri android build -- --apk --target aarch64
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
           TELEMETRY_URL: ${{ secrets.TELEMETRY_URL }}
           TELEMETRY_AUTH: ${{ secrets.TELEMETRY_AUTH }}
 
-      - name: Upload artifact
+      - name: Sign APK
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${ANDROID_KEYSTORE_BASE64}" ] || [ -z "${ANDROID_KEYSTORE_PASSWORD}" ] || [ -z "${ANDROID_KEY_ALIAS}" ]; then
+            echo "Android signing secrets are missing."
+            echo "Required secrets: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS."
+            echo "Optional secret: ANDROID_KEY_PASSWORD. If empty, ANDROID_KEYSTORE_PASSWORD is used."
+            exit 1
+          fi
+
+          KEYSTORE_PATH="$RUNNER_TEMP/xstack-vpn-release.keystore"
+          SIGNED_DIR="$RUNNER_TEMP/signed-apk"
+          BUILD_TOOLS="$(ls -d "$ANDROID_HOME/build-tools/"* | sort -V | tail -n 1)"
+          KEY_PASSWORD="${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
+
+          mkdir -p "$SIGNED_DIR"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+
+          mapfile -t APKS < <(find src-tauri/gen/android/app/build/outputs/apk -type f -name "*-unsigned.apk" | sort)
+          if [ "${#APKS[@]}" -eq 0 ]; then
+            echo "No unsigned release APK files found."
+            find src-tauri/gen/android/app/build/outputs/apk -type f -name "*.apk" -print
+            exit 1
+          fi
+
+          for apk in "${APKS[@]}"; do
+            base="$(basename "$apk" .apk)"
+            aligned="$RUNNER_TEMP/${base}-aligned.apk"
+            signed="$SIGNED_DIR/${base/-unsigned/}-signed.apk"
+
+            "$BUILD_TOOLS/zipalign" -f -p 4 "$apk" "$aligned"
+            "$BUILD_TOOLS/apksigner" sign \
+              --ks "$KEYSTORE_PATH" \
+              --ks-key-alias "$ANDROID_KEY_ALIAS" \
+              --ks-pass "pass:$ANDROID_KEYSTORE_PASSWORD" \
+              --key-pass "pass:$KEY_PASSWORD" \
+              --out "$signed" \
+              "$aligned"
+            "$BUILD_TOOLS/apksigner" verify --verbose "$signed"
+          done
+
+          ls -la "$SIGNED_DIR"
+
+      - name: Upload signed APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: vpn-client-android-aarch64
-          path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          path: ${{ runner.temp }}/signed-apk/*.apk
           if-no-files-found: error
 
   release:

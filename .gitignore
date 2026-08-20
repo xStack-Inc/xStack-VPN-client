@@ -13,3 +13,9 @@ src-tauri/gen/android/app/build/
 *.local
 coverage/
 src-tauri/icons/*.iconset/
+
+# Local source assets/scripts
+ChatGPT-color.png
+ChatGPT-wb.png
+build-macos.sh
+xstack-vpn-release.keystore

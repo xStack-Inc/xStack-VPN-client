@@ -91,6 +91,25 @@ npm run tauri:build -- --target x86_64-unknown-linux-gnu
 
 Нужны системные зависимости Tauri/WebKitGTK и инструменты для AppImage.
 
+## Android APK signing
+
+Android не устанавливает неподписанные APK. Release keystore не хранится в Git.
+
+Локальный файл `xstack-vpn-release.keystore` добавлен в `.gitignore`. Для CI его нужно положить в GitHub Actions secrets в base64:
+
+```bash
+base64 -i xstack-vpn-release.keystore | pbcopy
+```
+
+Создайте secrets рядом с `TELEMETRY_AUTH`:
+
+- `ANDROID_KEYSTORE_BASE64` — base64-содержимое `xstack-vpn-release.keystore`;
+- `ANDROID_KEYSTORE_PASSWORD` — пароль keystore;
+- `ANDROID_KEY_ALIAS` — alias ключа, например `xstack-vpn`;
+- `ANDROID_KEY_PASSWORD` — пароль ключа. Если он совпадает с паролем keystore, можно задать то же значение.
+
+Workflow подписывает `*-unsigned.apk` через `zipalign` и `apksigner`, затем публикует только подписанный APK artifact.
+
 ## GitHub Actions
 
 Workflow `.github/workflows/build.yml` собирает артефакты для:
@@ -226,4 +245,3 @@ Production frontend build:
 ```bash
 npm run build
 ```
-
