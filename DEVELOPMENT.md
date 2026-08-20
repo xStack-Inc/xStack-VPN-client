@@ -101,12 +101,15 @@ Android не устанавливает неподписанные APK. Release 
 base64 -i xstack-vpn-release.keystore | pbcopy
 ```
 
-Создайте secrets рядом с `TELEMETRY_AUTH`:
+Создайте обязательные secrets рядом с `TELEMETRY_AUTH`:
 
 - `ANDROID_KEYSTORE_BASE64` — base64-содержимое `xstack-vpn-release.keystore`;
-- `ANDROID_KEYSTORE_PASSWORD` — пароль keystore;
-- `ANDROID_KEY_ALIAS` — alias ключа, например `xstack-vpn`;
-- `ANDROID_KEY_PASSWORD` — пароль ключа. Если он совпадает с паролем keystore, можно задать то же значение.
+- `ANDROID_KEYSTORE_PASSWORD` — пароль keystore.
+
+Дополнительные secrets:
+
+- `ANDROID_KEY_ALIAS` — alias ключа. Если не задан, используется `xstack-vpn`;
+- `ANDROID_KEY_PASSWORD` — пароль ключа. Если не задан, используется `ANDROID_KEYSTORE_PASSWORD`.
 
 Workflow подписывает `*-unsigned.apk` через `zipalign` и `apksigner`, затем публикует только подписанный APK artifact.
 

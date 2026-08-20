@@ -280,16 +280,19 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -z "${ANDROID_KEYSTORE_BASE64}" ] || [ -z "${ANDROID_KEYSTORE_PASSWORD}" ] || [ -z "${ANDROID_KEY_ALIAS}" ]; then
+          if [ -z "${ANDROID_KEYSTORE_BASE64}" ] || [ -z "${ANDROID_KEYSTORE_PASSWORD}" ]; then
             echo "Android signing secrets are missing."
-            echo "Required secrets: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS."
-            echo "Optional secret: ANDROID_KEY_PASSWORD. If empty, ANDROID_KEYSTORE_PASSWORD is used."
+            echo "Required secrets: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD."
+            echo "Optional secrets: ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD."
+            echo "If ANDROID_KEY_ALIAS is empty, xstack-vpn is used."
+            echo "If ANDROID_KEY_PASSWORD is empty, ANDROID_KEYSTORE_PASSWORD is used."
             exit 1
           fi
 
           KEYSTORE_PATH="$RUNNER_TEMP/xstack-vpn-release.keystore"
           SIGNED_DIR="$RUNNER_TEMP/signed-apk"
           BUILD_TOOLS="$(ls -d "$ANDROID_HOME/build-tools/"* | sort -V | tail -n 1)"
+          KEY_ALIAS="${ANDROID_KEY_ALIAS:-xstack-vpn}"
           KEY_PASSWORD="${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
 
           mkdir -p "$SIGNED_DIR"
@@ -310,7 +313,7 @@ jobs:
             "$BUILD_TOOLS/zipalign" -f -p 4 "$apk" "$aligned"
             "$BUILD_TOOLS/apksigner" sign \
               --ks "$KEYSTORE_PATH" \
-              --ks-key-alias "$ANDROID_KEY_ALIAS" \
+              --ks-key-alias "$KEY_ALIAS" \
               --ks-pass "pass:$ANDROID_KEYSTORE_PASSWORD" \
               --key-pass "pass:$KEY_PASSWORD" \
               --out "$signed" \
