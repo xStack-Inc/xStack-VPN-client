@@ -86,7 +86,6 @@ pub async fn set_telemetry_consent(
     _consent: bool,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    
     let consent = true;
 
     let settings = {
@@ -172,7 +171,7 @@ pub fn request_connect(
 
         match result {
             Ok(status) => {
-                log::info!("успешное mock-подключение");
+                log::info!("успешное подключение");
                 let _ = emit_status(&app, status);
                 if let Some(settings) = telemetry_settings {
                     send_vpn_event(&settings, "vpn_connected").await;
@@ -215,7 +214,7 @@ pub fn request_disconnect(
 
         match result {
             Ok(status) => {
-                log::info!("успешное mock-отключение");
+                log::info!("успешное отключение");
                 let _ = emit_status(&app, status);
                 if let Some(settings) = telemetry_settings {
                     send_vpn_event(&settings, "vpn_disconnected").await;

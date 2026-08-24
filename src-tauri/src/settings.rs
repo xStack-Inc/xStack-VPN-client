@@ -75,7 +75,7 @@ impl AppSettings {
 }
 
 fn settings_path() -> io::Result<PathBuf> {
-    let dirs = ProjectDirs::from("com", "example", "MockVpnClient")
+    let dirs = ProjectDirs::from("com", "xstack", "xStack VPN Client")
         .ok_or_else(|| io::Error::other("cannot resolve config directory"))?;
     Ok(dirs.config_dir().join("settings.json"))
 }

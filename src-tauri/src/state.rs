@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::{
     settings::AppSettings,
-    vpn::{backend::VpnBackend, mock::MockVpnBackend},
+    vpn::{backend::VpnBackend, client::XStackVpnBackend},
 };
 
 pub struct AppState {
@@ -13,7 +13,7 @@ pub struct AppState {
 impl AppState {
     pub fn new(settings: AppSettings) -> Self {
         Self {
-            vpn: Arc::new(Mutex::new(Box::new(MockVpnBackend::new()))),
+            vpn: Arc::new(Mutex::new(Box::new(XStackVpnBackend::new()))),
             settings: Arc::new(Mutex::new(settings)),
         }
     }

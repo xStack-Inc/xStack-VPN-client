@@ -1,12 +1,12 @@
 [package]
-name = "mock-vpn-client"
+name = "xstack-vpn-client"
 version = "0.1.0"
-description = "Cross-platform mock VPN client built with Tauri 2"
-authors = ["VPN Client MVP"]
+description = "Cross-platform xStack VPN client built with Tauri 2"
+authors = ["xStack"]
 edition = "2021"
 
 [lib]
-name = "mock_vpn_client_lib"
+name = "xstack_vpn_client_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

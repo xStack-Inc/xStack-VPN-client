@@ -1,5 +1,5 @@
 {
-  "name": "mock-vpn-client",
+  "name": "xstack-vpn-client",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -26,4 +26,3 @@
     "vue-tsc": "^2"
   }
 }
-

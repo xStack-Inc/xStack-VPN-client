@@ -1872,26 +1872,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mock-vpn-client"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "directories",
- "log",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-android-account",
- "tauri-plugin-autostart",
- "tauri-plugin-log",
- "thiserror 2.0.19",
- "tokio",
- "uuid",
-]
-
-[[package]]
 name = "moxcms"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4814,6 +4794,26 @@ dependencies = [
  "libc",
  "once_cell",
  "pkg-config",
+]
+
+[[package]]
+name = "xstack-vpn-client"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "directories",
+ "log",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-android-account",
+ "tauri-plugin-autostart",
+ "tauri-plugin-log",
+ "thiserror 2.0.19",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]

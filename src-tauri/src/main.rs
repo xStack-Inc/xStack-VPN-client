@@ -1,5 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    mock_vpn_client_lib::run();
+    xstack_vpn_client_lib::run();
 }

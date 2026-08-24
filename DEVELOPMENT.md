@@ -111,7 +111,7 @@ base64 -i xstack-vpn-release.keystore | pbcopy
 - `ANDROID_KEY_ALIAS` — alias ключа. Если не задан, используется `xstack-vpn`;
 - `ANDROID_KEY_PASSWORD` — пароль ключа. Если не задан, используется `ANDROID_KEYSTORE_PASSWORD`.
 
-Workflow подписывает `*-unsigned.apk` через `zipalign` и `apksigner`, затем публикует только подписанный APK artifact.
+Workflow подписывает `*-unsigned.apk` через `zipalign` и `apksigner`, затем публикует только подписанный APK artifact с именем `xStack VPN_{version}_android.apk`.
 
 ## GitHub Actions
 

@@ -1,12 +1,12 @@
 use crate::vpn::{backend::VpnBackend, error::VpnError, status::VpnStatus};
 
-pub struct MockVpnBackend {
+pub struct XStackVpnBackend {
     status: VpnStatus,
     fail_next_connect: bool,
     fail_next_disconnect: bool,
 }
 
-impl Default for MockVpnBackend {
+impl Default for XStackVpnBackend {
     fn default() -> Self {
         Self {
             status: VpnStatus::Disconnected,
@@ -16,7 +16,7 @@ impl Default for MockVpnBackend {
     }
 }
 
-impl MockVpnBackend {
+impl XStackVpnBackend {
     pub fn new() -> Self {
         Self::default()
     }
@@ -55,7 +55,7 @@ impl MockVpnBackend {
     }
 }
 
-impl VpnBackend for MockVpnBackend {
+impl VpnBackend for XStackVpnBackend {
     fn connect(&mut self) -> Result<(), VpnError> {
         self.transition(VpnStatus::Connecting)
     }
@@ -99,13 +99,13 @@ mod tests {
 
     #[test]
     fn initial_state_is_disconnected() {
-        let backend = MockVpnBackend::new();
+        let backend = XStackVpnBackend::new();
         assert_eq!(backend.status(), VpnStatus::Disconnected);
     }
 
     #[test]
     fn connects_from_disconnected() {
-        let mut backend = MockVpnBackend::new();
+        let mut backend = XStackVpnBackend::new();
         backend.connect().unwrap();
         assert_eq!(backend.status(), VpnStatus::Connecting);
         backend.complete_connect().unwrap();
@@ -114,7 +114,7 @@ mod tests {
 
     #[test]
     fn disconnects_from_connected() {
-        let mut backend = MockVpnBackend::new();
+        let mut backend = XStackVpnBackend::new();
         backend.connect().unwrap();
         backend.complete_connect().unwrap();
         backend.disconnect().unwrap();
@@ -125,7 +125,7 @@ mod tests {
 
     #[test]
     fn rejects_duplicate_connect_while_connecting() {
-        let mut backend = MockVpnBackend::new();
+        let mut backend = XStackVpnBackend::new();
         backend.connect().unwrap();
         let error = backend.connect().unwrap_err();
         assert!(matches!(error, VpnError::InvalidTransition { .. }));
@@ -134,15 +134,15 @@ mod tests {
 
     #[test]
     fn rejects_disconnect_while_disconnected() {
-        let mut backend = MockVpnBackend::new();
+        let mut backend = XStackVpnBackend::new();
         let error = backend.disconnect().unwrap_err();
         assert!(matches!(error, VpnError::InvalidTransition { .. }));
         assert_eq!(backend.status(), VpnStatus::Disconnected);
     }
 
     #[test]
-    fn handles_mock_connect_error() {
-        let mut backend = MockVpnBackend::new();
+    fn handles_connect_error() {
+        let mut backend = XStackVpnBackend::new();
         backend.fail_next_connect();
         backend.connect().unwrap();
         let error = backend.complete_connect().unwrap_err();
@@ -151,8 +151,8 @@ mod tests {
     }
 
     #[test]
-    fn handles_mock_disconnect_error() {
-        let mut backend = MockVpnBackend::new();
+    fn handles_disconnect_error() {
+        let mut backend = XStackVpnBackend::new();
         backend.connect().unwrap();
         backend.complete_connect().unwrap();
         backend.fail_next_disconnect();

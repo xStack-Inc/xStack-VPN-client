@@ -4,6 +4,6 @@ use crate::vpn::status::VpnStatus;
 pub enum VpnError {
     #[error("invalid VPN state transition from {from:?} to {to:?}")]
     InvalidTransition { from: VpnStatus, to: VpnStatus },
-    #[error("mock backend failure: {0}")]
+    #[error("VPN backend failure: {0}")]
     BackendFailed(String),
 }

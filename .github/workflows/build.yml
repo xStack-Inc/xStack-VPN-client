@@ -308,10 +308,11 @@ jobs:
             exit 1
           fi
 
+          RELEASE_VERSION="${GITHUB_REF_NAME#v}"
           for apk in "${APKS[@]}"; do
             base="$(basename "$apk" .apk)"
             aligned="$RUNNER_TEMP/${base}-aligned.apk"
-            signed="$SIGNED_DIR/${base/-unsigned/}-signed.apk"
+            signed="$SIGNED_DIR/xStack VPN_${RELEASE_VERSION}_android.apk"
 
             "$BUILD_TOOLS/zipalign" -f -p 4 "$apk" "$aligned"
             "$BUILD_TOOLS/apksigner" sign \
@@ -403,12 +404,8 @@ jobs:
             echo "### macOS"
             echo ""
             echo "1. Download the \`.dmg\` file and open it."
-            echo "2. Drag **Mock VPN Client** to the **Applications** folder."
-            echo "3. Remove the quarantine attribute (required for the app to work correctly):"
-            echo '   ```bash'
-            echo '   xattr -cr "/Applications/Mock VPN Client.app"'
-            echo '   ```'
-            echo "4. On first launch macOS will block the app with _\"cannot be opened because it is from an unidentified developer\"_:"
+            echo "2. Drag **xStack VPN Client** to the **Applications** folder."
+            echo "3. On first launch macOS will block the app with _\"cannot be opened because it is from an unidentified developer\"_:"
             echo "   - Open **System Settings → Privacy & Security**."
             echo "   - Scroll down to the **Security** section — you will see a message about the blocked app."
             echo "   - Click **Open Anyway**."
@@ -419,8 +416,8 @@ jobs:
             echo "1. Download the \`.AppImage\` file."
             echo "2. Make it executable and run:"
             echo '   ```bash'
-            echo '   chmod +x Mock-VPN-Client_*.AppImage'
-            echo '   ./Mock-VPN-Client_*.AppImage'
+            echo '   chmod +x xStack\ VPN_*.AppImage'
+            echo '   ./xStack\ VPN_*.AppImage'
             echo '   ```'
             echo ""
             echo "### Android"
@@ -430,6 +427,47 @@ jobs:
             echo "   - Tap **Settings** and enable **Allow from this source**."
             echo "   - Go back and tap **Install**."
             echo "3. If Play Protect shows a warning, tap **Install anyway**."
+            echo ""
+            echo "---"
+            echo ""
+            echo "## Установка"
+            echo ""
+            echo "> **Примечание:** приложение не подписано кодовым сертификатом. Следуйте инструкциям для вашей платформы ниже, чтобы разрешить запуск при предупреждении безопасности."
+            echo ""
+            echo "### Windows"
+            echo ""
+            echo "1. Скачайте файл \`.exe\`."
+            echo "2. Запустите его двойным кликом — установка не требуется, это portable installer."
+            echo "3. Если **Windows Defender SmartScreen** показывает _\"Windows protected your PC\"_:"
+            echo "   - Нажмите **More info**."
+            echo "   - Нажмите **Run anyway**."
+            echo ""
+            echo "### macOS"
+            echo ""
+            echo "1. Скачайте файл \`.dmg\` и откройте его."
+            echo "2. Перетащите **xStack VPN Client** в папку **Applications**."
+            echo "3. При первом запуске macOS заблокирует приложение с сообщением _\"cannot be opened because it is from an unidentified developer\"_:"
+            echo "   - Откройте **System Settings → Privacy & Security**."
+            echo "   - Прокрутите вниз до раздела **Security** — там будет сообщение о заблокированном приложении."
+            echo "   - Нажмите **Open Anyway**."
+            echo "   - В окне подтверждения нажмите **Open**."
+            echo ""
+            echo "### Linux"
+            echo ""
+            echo "1. Скачайте файл \`.AppImage\`."
+            echo "2. Сделайте его исполняемым и запустите:"
+            echo '   ```bash'
+            echo '   chmod +x xStack\ VPN_*.AppImage'
+            echo '   ./xStack\ VPN_*.AppImage'
+            echo '   ```'
+            echo ""
+            echo "### Android"
+            echo ""
+            echo "1. Скачайте файл \`.apk\` на устройство."
+            echo "2. Откройте файл — Android покажет предупреждение _\"Install unknown apps\"_:"
+            echo "   - Нажмите **Settings** и включите **Allow from this source**."
+            echo "   - Вернитесь назад и нажмите **Install**."
+            echo "3. Если Play Protect показывает предупреждение, нажмите **Install anyway**."
           } > release_notes.md
 
           echo "notes_file=release_notes.md" >> "$GITHUB_OUTPUT"
