@@ -1,0 +1,62 @@
+name: Update landing page default version
+
+# При публикации релиза записывает его тег (последнюю версию) в docs/version.js.
+# Лендинг https://xstack-inc.github.io/xStack-VPN-client/ берёт эту версию как
+# DEFAULT_VERSION (если в ссылке не передан параметр &v=...).
+# Коммит помечается [skip ci], чтобы не запускать тяжёлую сборку build.yml.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Resolve latest version tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            TAG="$(gh api "repos/${{ github.repository }}/releases/latest" --jq .tag_name)"
+          fi
+          if [ -z "$TAG" ]; then
+            echo "Не удалось определить тег релиза" >&2
+            exit 1
+          fi
+          VERSION="${TAG#v}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Последний тег: $TAG -> версия: $VERSION"
+
+      - name: Write docs/version.js
+        run: |
+          cat > docs/version.js <<EOF
+          // Обновляется автоматически CI/CD (workflow update-landing-version.yml)
+          // при публикации релиза: сюда записывается последний тег (без префикса v).
+          // Если файл не успел обновиться, страница использует фолбэк 1.1.2.
+          window.XSTACK_DEFAULT_VERSION = '${VERSION}';
+          EOF
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/version.js
+          if git diff --cached --quiet; then
+            echo "Версия не изменилась, коммит не нужен."
+          else
+            git commit -m "chore: landing page default version -> ${VERSION} [skip ci]"
+            git push
+          fi

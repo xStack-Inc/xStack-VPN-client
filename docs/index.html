@@ -1,0 +1,93 @@
+<!doctype html>
+<!--
+  xStack VPN - редиректор для рассылки GoPhish (без интерфейса).
+  Адрес: https://xstack-inc.github.io/xStack-VPN-client/
+
+  Формат ссылки в письме:
+    https://xstack-inc.github.io/xStack-VPN-client/?rid={{.RId}}&p=windows
+  (можно добавить &v=1.1.2 - версия релиза; без неё берётся DEFAULT_VERSION)
+
+  Логика:
+    1. Валидация параметров. Ошибка -> просто текст на странице, больше ничего не делаем.
+    2. Сразу отправляем в GoPhish событие "Clicked Link":
+         GET {GOPHISH_BASE}/redirect?rid=...&url=<ссылка на файл релиза>
+    3. Сразу начинаем скачивание файла с GitHub Releases (location.assign).
+
+  Параметры:
+    rid - ID получателя GoPhish (в шаблоне письма: {{.RId}})          [обязательный]
+    p   - платформа: windows | macos | linux | android                [обязательный]
+    v   - версия релиза (напр. 1.1.2); по умолчанию - DEFAULT_VERSION [необязательный]
+    g   - базовый URL GoPhish для теста: ?g=http://127.0.0.1:3333     [необязательный]
+
+  ВАЖНО: перед публикацией укажите адрес вашего сервера GoPhish в константе
+  GOPHISH_BASE ниже. Только HTTPS - страница открывается по HTTPS, и браузер
+  блокирует запросы к http:// (mixed content).
+
+  DEFAULT_VERSION берётся из CI/CD: workflow update-landing-version.yml при
+  публикации релиза записывает последний тег в docs/version.js.
+  Если version.js ещё не создан - используется 1.1.2.
+-->
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <title>xStack VPN</title>
+  </head>
+  <body>
+    <script src="version.js"></script>
+    <script>
+      // ======================= НАСТРОЙКИ =======================
+      // Адрес сервера GoPhish (ОБЯЗАТЕЛЬНО замените на свой, только HTTPS!)
+      var GOPHISH_BASE = 'https://GOPHISH-SERVER.example.com';
+      // Версия по умолчанию: из docs/version.js (обновляется CI/CD по тегу релиза)
+      var DEFAULT_VERSION = window.XSTACK_DEFAULT_VERSION || '1.1.2';
+      // Базовый путь к релизам GitHub
+      var RELEASES_BASE = 'https://github.com/xStack-Inc/xStack-VPN-client/releases/download/';
+      // Пауза перед автоскачиванием (мс), чтобы запрос в GoPhish гарантированно ушёл
+      var DOWNLOAD_DELAY_MS = 300;
+      // =========================================================
+
+      var FILES = {
+        windows: function (v) { return 'xStack.VPN_' + v + '_x64-setup.exe'; },
+        macos:   function (v) { return 'xStack.VPN_' + v + '_aarch64.dmg'; },
+        linux:   function (v) { return 'xStack.VPN_' + v + '_amd64.AppImage'; },
+        android: function (v) { return 'xStack.VPN_' + v + '_android.apk'; }
+      };
+
+      function fail(msg) {
+        document.body.textContent = 'Ошибка: ' + msg;
+        throw new Error(msg);
+      }
+
+      var qs = new URLSearchParams(window.location.search);
+      var rid = (qs.get('rid') || '').replace(/[^A-Za-z0-9]/g, '');
+      var platform = (qs.get('p') || '').toLowerCase();
+      var version = (qs.get('v') || '').replace(/[^0-9A-Za-z.\-]/g, '') || DEFAULT_VERSION;
+      var gophish = (qs.get('g') || GOPHISH_BASE).replace(/\/+$/, '');
+
+      // --- Валидация: ошибки выводятся просто текстом ---
+      if (!rid) fail('не указан параметр rid (идентификатор получателя)');
+      if (!platform) fail('не указан параметр p (windows | macos | linux | android)');
+      if (!FILES[platform]) fail('неизвестная платформа "' + platform + '"');
+
+      var downloadUrl = RELEASES_BASE + 'v' + version + '/' + FILES[platform](version);
+
+      if (window.location.protocol === 'https:' && gophish.indexOf('http://') === 0) {
+        console.warn('GOPHISH_BASE указан по HTTP: браузер заблокирует трекинг с HTTPS-страницы. Используйте HTTPS.');
+      }
+
+      // --- 1. Сразу: событие "Clicked Link" в GoPhish ---
+      fetch(gophish + '/redirect?rid=' + encodeURIComponent(rid) +
+            '&url=' + encodeURIComponent(downloadUrl),
+            { mode: 'no-cors', redirect: 'follow', credentials: 'omit' })
+        .catch(function () {});
+
+      // --- 2. Сразу: автоскачивание файла релиза ---
+      // GitHub Releases отдают Content-Disposition: attachment,
+      // поэтому браузер скачивает файл, не уходя со страницы.
+      setTimeout(function () {
+        window.location.assign(downloadUrl);
+      }, DOWNLOAD_DELAY_MS);
+    </script>
+    <noscript>Ошибка: для работы страницы требуется включённый JavaScript.</noscript>
+  </body>
+</html>
