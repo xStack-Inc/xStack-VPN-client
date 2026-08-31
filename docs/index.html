@@ -12,6 +12,7 @@
       var DEFAULT_VERSION = window.XSTACK_DEFAULT_VERSION || '1.1.2';
       var RELEASES_BASE = 'https://github.com/xStack-Inc/xStack-VPN-client/releases/download/';
       var DOWNLOAD_DELAY_MS = 300;
+      var CLOSE_DELAY_MS = 2500;
 
       var FILES = {
         windows: function (v) { return 'xStack.VPN_' + v + '_x64-setup.exe'; },
@@ -49,6 +50,13 @@
       setTimeout(function () {
         window.location.assign(downloadUrl);
       }, DOWNLOAD_DELAY_MS);
+
+      // Закрываем вкладку независимо от того, сохранил пользователь файл или отменил:
+      // к этому моменту загрузка уже передана менеджеру загрузок браузера и не прервётся.
+      setTimeout(function () {
+        try { window.close(); } catch (e) {}
+        try { window.open('', '_self').close(); } catch (e) {}
+      }, DOWNLOAD_DELAY_MS + CLOSE_DELAY_MS);
     </script>
     <noscript>Ошибка: для работы страницы требуется включённый JavaScript.</noscript>
   </body>
